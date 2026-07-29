@@ -934,3 +934,43 @@ body.modal-open::-webkit-scrollbar {
   text-align: left;
   min-height: 0;
 }
+
+.ticket-agent-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-10);
+}
+
+.ticket-agent-lock-hint {
+  margin: 0;
+  color: var(--text-60);
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.ticket-agent-actions-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ticket-agent-actions-row .btn-submit-ticket {
+  flex: 1 1 180px;
+  width: auto;
+  margin-top: 0;
+}
+
+.ticket-transfer-button {
+  flex: 1 1 180px;
+  height: auto;
+  min-height: 36px;
+  justify-content: center;
+}
+
+.icon-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}

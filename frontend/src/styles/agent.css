@@ -102,7 +102,9 @@
   font-size: 14px;
   font-weight: 500;
   line-height: 1.4;
-  word-break: break-word;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .agent-profile-role {

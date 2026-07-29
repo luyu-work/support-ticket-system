@@ -159,4 +159,16 @@ export async function claimTicket(ticketId: number): Promise<SupportTicket> {
   return apiFetch<SupportTicket>(`/tickets/${ticketId}/claim`, { method: "POST" }, true);
 }
 
+export async function closeTicket(ticketId: number): Promise<SupportTicket> {
+  return apiFetch<SupportTicket>(`/tickets/${ticketId}/close`, { method: "POST" }, true);
+}
+
+export async function transferTicketToEngineers(ticketId: number): Promise<SupportTicket> {
+  return apiFetch<SupportTicket>(
+    `/tickets/${ticketId}/transfer-to-engineers`,
+    { method: "POST" },
+    true,
+  );
+}
+
 export { API_BASE_URL };

@@ -103,6 +103,42 @@ def test_agent_claims_ticket(
     assert body["assigned_agent_id"] is not None
 
 
+def test_agent_closes_and_transfers_ticket(
+    api_test_client: TestClient,
+    database_session: Session,
+) -> None:
+    client_token = _register_client(api_test_client, "resolve.client@example.com")
+    create = api_test_client.post(
+        "/tickets",
+        headers={"Authorization": f"Bearer {client_token}"},
+        data={"problem_reason": "other", "description": "resolve me"},
+    )
+    ticket_id = create.json()["support_ticket_id"]
+    agent_token = _agent_token(api_test_client, database_session)
+    headers = {"Authorization": f"Bearer {agent_token}"}
+
+    claim = api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)
+    assert claim.status_code == 200
+
+    transfer = api_test_client.post(
+        f"/tickets/{ticket_id}/transfer-to-engineers",
+        headers=headers,
+    )
+    assert transfer.status_code == 200
+    assert transfer.json()["status"] == "transferred_to_engineers"
+
+    create2 = api_test_client.post(
+        "/tickets",
+        headers={"Authorization": f"Bearer {client_token}"},
+        data={"problem_reason": "bug_report", "description": "close me"},
+    )
+    ticket_id2 = create2.json()["support_ticket_id"]
+    api_test_client.post(f"/tickets/{ticket_id2}/claim", headers=headers)
+    close = api_test_client.post(f"/tickets/{ticket_id2}/close", headers=headers)
+    assert close.status_code == 200
+    assert close.json()["status"] == "closed"
+
+
 def test_stale_queue_becomes_important(database_session: Session) -> None:
     from app.models import UserAccount, UserRole
     from app.core.security import hash_plain_password

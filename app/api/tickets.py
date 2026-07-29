@@ -28,16 +28,19 @@ from app.schemas.tickets import (
 )
 from app.services.support_ticket_service import (
     InvalidTicketPhotoError,
+    TicketActionNotAllowedError,
     TicketAlreadyAssignedError,
     TicketNotAvailableForClaimError,
     TooManyTicketPhotosError,
     UnknownProblemReasonError,
     claim_ticket_from_pool,
+    close_ticket_by_agent,
     create_support_ticket_for_client,
     format_agent_badge,
     get_support_ticket_by_id,
     list_common_ticket_pool,
     list_tickets_for_client,
+    transfer_ticket_to_engineers_by_agent,
 )
 
 logger = logging.getLogger(__name__)
@@ -201,6 +204,64 @@ def claim_support_ticket(
         support_ticket_id,
         agent_account.user_account_id,
     )
+    return SupportTicketResponse.model_validate(ticket)
+
+
+@tickets_router.post(
+    "/{support_ticket_id}/close",
+    response_model=SupportTicketResponse,
+)
+def close_support_ticket(
+    support_ticket_id: int,
+    database_session: DatabaseSessionDep,
+    agent_account: AgentAccountDep,
+) -> SupportTicketResponse:
+    """Agent closes a ticket they own."""
+    try:
+        ticket = close_ticket_by_agent(
+            database_session,
+            support_ticket_id=support_ticket_id,
+            agent_account=agent_account,
+        )
+    except TicketNotAvailableForClaimError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        ) from error
+    except TicketActionNotAllowedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot close this ticket",
+        ) from error
+    return SupportTicketResponse.model_validate(ticket)
+
+
+@tickets_router.post(
+    "/{support_ticket_id}/transfer-to-engineers",
+    response_model=SupportTicketResponse,
+)
+def transfer_support_ticket_to_engineers(
+    support_ticket_id: int,
+    database_session: DatabaseSessionDep,
+    agent_account: AgentAccountDep,
+) -> SupportTicketResponse:
+    """Agent transfers a ticket they own to engineers."""
+    try:
+        ticket = transfer_ticket_to_engineers_by_agent(
+            database_session,
+            support_ticket_id=support_ticket_id,
+            agent_account=agent_account,
+        )
+    except TicketNotAvailableForClaimError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket not found",
+        ) from error
+    except TicketActionNotAllowedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot transfer this ticket",
+        ) from error
     return SupportTicketResponse.model_validate(ticket)
 
 

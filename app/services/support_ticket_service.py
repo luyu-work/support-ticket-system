@@ -34,6 +34,10 @@ class TicketAlreadyAssignedError(Exception):
     """Another agent already holds this ticket."""
 
 
+class TicketActionNotAllowedError(Exception):
+    """Agent cannot close/transfer this ticket."""
+
+
 def build_ticket_title(problem_reason: str, custom_title: str | None) -> str:
     if custom_title and custom_title.strip():
         return custom_title.strip()[:255]
@@ -218,6 +222,47 @@ def format_agent_badge(user_account_id: int) -> str:
     return f"Агент #{user_account_id:03d}"
 
 
+def _assert_agent_owns_ticket(ticket: SupportTicket, agent_account: UserAccount) -> None:
+    if ticket.assigned_agent_id != agent_account.user_account_id:
+        raise TicketActionNotAllowedError
+
+
+def close_ticket_by_agent(
+    database_session: Session,
+    *,
+    support_ticket_id: int,
+    agent_account: UserAccount,
+) -> SupportTicket:
+    ticket = get_support_ticket_by_id(database_session, support_ticket_id)
+    if ticket is None:
+        raise TicketNotAvailableForClaimError
+    if ticket.status in {TicketStatus.CLOSED, TicketStatus.TRANSFERRED_TO_ENGINEERS}:
+        raise TicketActionNotAllowedError
+    _assert_agent_owns_ticket(ticket, agent_account)
+    ticket.status = TicketStatus.CLOSED
+    database_session.commit()
+    database_session.refresh(ticket)
+    return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
+
+
+def transfer_ticket_to_engineers_by_agent(
+    database_session: Session,
+    *,
+    support_ticket_id: int,
+    agent_account: UserAccount,
+) -> SupportTicket:
+    ticket = get_support_ticket_by_id(database_session, support_ticket_id)
+    if ticket is None:
+        raise TicketNotAvailableForClaimError
+    if ticket.status in {TicketStatus.CLOSED, TicketStatus.TRANSFERRED_TO_ENGINEERS}:
+        raise TicketActionNotAllowedError
+    _assert_agent_owns_ticket(ticket, agent_account)
+    ticket.status = TicketStatus.TRANSFERRED_TO_ENGINEERS
+    database_session.commit()
+    database_session.refresh(ticket)
+    return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
+
+
 # Re-export for API error handling
 __all__ = [
     "UnknownProblemReasonError",
@@ -225,12 +270,15 @@ __all__ = [
     "InvalidTicketPhotoError",
     "TicketNotAvailableForClaimError",
     "TicketAlreadyAssignedError",
+    "TicketActionNotAllowedError",
     "IMPORTANT_AFTER_HOURS",
     "create_support_ticket_for_client",
     "get_support_ticket_by_id",
     "list_tickets_for_client",
     "list_common_ticket_pool",
     "claim_ticket_from_pool",
+    "close_ticket_by_agent",
+    "transfer_ticket_to_engineers_by_agent",
     "promote_stale_queue_tickets_to_important",
     "format_agent_badge",
     "build_ticket_title",

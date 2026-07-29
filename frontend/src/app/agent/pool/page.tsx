@@ -37,6 +37,7 @@ export default function AgentPoolPage() {
   const [sortKey, setSortKey] = useState<SortKey>("id");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
+  const [lockUntilResolved, setLockUntilResolved] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
   const loadPool = useCallback(async () => {
@@ -103,6 +104,10 @@ export default function AgentPoolPage() {
 
   async function openRow(item: PoolTicketItem) {
     setActionMessage("");
+    const needsResolution =
+      user?.role === "agent" &&
+      (item.status === "in_queue" || item.status === "important");
+
     try {
       // Free agent claims unassigned pool tickets when opening them
       if (
@@ -114,6 +119,7 @@ export default function AgentPoolPage() {
         await loadPool();
       }
       const detail = await fetchTicketDetail(item.support_ticket_id);
+      setLockUntilResolved(needsResolution);
       setSelectedTicket(detail);
     } catch (err) {
       setActionMessage(
@@ -301,8 +307,16 @@ export default function AgentPoolPage() {
       <TicketDetailModal
         ticket={selectedTicket}
         open={Boolean(selectedTicket)}
+        lockUntilResolved={lockUntilResolved}
+        agentActions={user.role === "agent"}
+        onResolved={() => {
+          setLockUntilResolved(false);
+          void loadPool();
+        }}
         onClose={() => {
+          if (lockUntilResolved) return;
           setSelectedTicket(null);
+          setLockUntilResolved(false);
           void loadPool();
         }}
       />
