@@ -30,5 +30,22 @@ export function getStoredUserAccount(): UserAccount | null {
 }
 
 export function getPostLoginPath(userAccount: UserAccount): string {
-  return userAccount.role === "client" ? "/tickets" : "/home";
+  if (userAccount.role === "client") return "/tickets";
+  if (userAccount.role === "agent") return "/agent/pool";
+  return "/home";
+}
+
+export function formatAgentBadge(userAccountId: number): string {
+  return `Агент #${String(userAccountId).padStart(3, "0")}`;
+}
+
+export function formatTicketCreatedAt(isoDate: string): string {
+  const date = new Date(isoDate);
+  if (Number.isNaN(date.getTime())) return isoDate;
+  const day = String(date.getDate()).padStart(2, "0");
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const year = date.getFullYear();
+  const hours = String(date.getHours()).padStart(2, "0");
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  return `${day}.${month}.${year} ${hours}:${minutes}`;
 }

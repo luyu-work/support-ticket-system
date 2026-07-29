@@ -73,6 +73,18 @@ def require_agent_role(current_user_account: CurrentUserAccountDep) -> UserAccou
     return current_user_account
 
 
+def require_agent_or_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
+    if _role_value(current_user_account) not in {
+        UserRole.AGENT.value,
+        UserRole.ADMIN.value,
+    }:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Agent or admin role required",
+        )
+    return current_user_account
+
+
 def require_client_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
     if _role_value(current_user_account) != UserRole.CLIENT.value:
         raise HTTPException(
@@ -85,3 +97,4 @@ def require_client_role(current_user_account: CurrentUserAccountDep) -> UserAcco
 ClientAccountDep = Annotated[UserAccount, Depends(require_client_role)]
 AdminAccountDep = Annotated[UserAccount, Depends(require_admin_role)]
 AgentAccountDep = Annotated[UserAccount, Depends(require_agent_role)]
+StaffAccountDep = Annotated[UserAccount, Depends(require_agent_or_admin_role)]

@@ -3,6 +3,8 @@ import type {
   ProblemReasonOption,
   SupportTicket,
   SupportTicketListResponse,
+  TicketPoolListResponse,
+  TicketStatus,
   UserAccount,
 } from "@/types/api";
 import { getAccessToken } from "@/lib/auth-storage";
@@ -144,6 +146,17 @@ export async function fetchTicketAttachmentBlob(
     throw new ApiError(response.status, "Не удалось загрузить фото");
   }
   return response.blob();
+}
+
+export async function fetchTicketPool(
+  status?: TicketStatus | null,
+): Promise<TicketPoolListResponse> {
+  const query = status ? `?status=${encodeURIComponent(status)}` : "";
+  return apiFetch<TicketPoolListResponse>(`/tickets/pool${query}`, {}, true);
+}
+
+export async function claimTicket(ticketId: number): Promise<SupportTicket> {
+  return apiFetch<SupportTicket>(`/tickets/${ticketId}/claim`, { method: "POST" }, true);
 }
 
 export { API_BASE_URL };

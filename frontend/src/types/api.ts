@@ -51,6 +51,26 @@ export interface SupportTicketListResponse {
   page_size: number;
 }
 
+export interface PoolTicketAssignee {
+  user_account_id: number;
+  full_name: string;
+  agent_badge: string;
+}
+
+export interface PoolTicketItem {
+  support_ticket_id: number;
+  status: TicketStatus;
+  created_at: string;
+  problem_reason: string;
+  problem_reason_label: string;
+  assigned_agent: PoolTicketAssignee | null;
+}
+
+export interface TicketPoolListResponse {
+  items: PoolTicketItem[];
+  total_ticket_count: number;
+}
+
 export interface ProblemReasonOption {
   value: string;
   label_ru: string;

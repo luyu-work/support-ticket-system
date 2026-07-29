@@ -101,6 +101,10 @@ Staff (сиды при старте API):
 | `GET` | `/tickets/my` | client — свои тикеты |
 | `GET` | `/tickets/{id}` | detail |
 | `GET` | `/tickets/{id}/attachments/{aid}/file` | фото |
+| `GET` | `/tickets/pool` | общий пул (agent/admin) |
+| `POST` | `/tickets/{id}/claim` | агент берёт тикет в работу |
+
+Тикет в очереди дольше **8 часов** автоматически получает статус `important`.
 
 ## UI (Next.js)
 
@@ -108,10 +112,12 @@ Staff (сиды при старте API):
 |-----|----------|
 | `/login` | вход |
 | `/register` | регистрация client |
-| `/tickets` | «Мои тикеты» + модалки |
-| `/home` | заглушка agent/admin |
+| `/tickets` | «Мои тикеты» (client) |
+| `/agent/pool` | общий пул тикетов (agent) |
+| `/home` | заглушка admin |
 
-Клиент после входа попадает на `/tickets`.
+Клиент → `/tickets`, агент → `/agent/pool`.  
+Пул общий: любой свободный агент открывает незанятый тикет и забирает его (`claim`).
 
 ## Тесты backend
 

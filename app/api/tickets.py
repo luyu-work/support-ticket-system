@@ -8,20 +8,35 @@ from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, sta
 from fastapi.responses import FileResponse
 from sqlalchemy import select
 
-from app.api.deps import ClientAccountDep, CurrentUserAccountDep, DatabaseSessionDep
+from app.api.deps import (
+    AgentAccountDep,
+    ClientAccountDep,
+    CurrentUserAccountDep,
+    DatabaseSessionDep,
+    StaffAccountDep,
+)
 from app.models import TicketAttachment
 from app.schemas.tickets import (
+    PROBLEM_REASON_LABELS_RU,
+    PoolTicketAssignee,
+    PoolTicketItem,
     SupportTicketListResponse,
     SupportTicketResponse,
+    TicketPoolListResponse,
     TicketProblemReasonOption,
     list_problem_reason_options,
 )
 from app.services.support_ticket_service import (
     InvalidTicketPhotoError,
+    TicketAlreadyAssignedError,
+    TicketNotAvailableForClaimError,
     TooManyTicketPhotosError,
     UnknownProblemReasonError,
+    claim_ticket_from_pool,
     create_support_ticket_for_client,
+    format_agent_badge,
     get_support_ticket_by_id,
+    list_common_ticket_pool,
     list_tickets_for_client,
 )
 
@@ -112,6 +127,81 @@ def list_my_support_tickets(
         page_number=page_number,
         page_size=page_size,
     )
+
+
+@tickets_router.get("/pool", response_model=TicketPoolListResponse)
+def list_ticket_pool(
+    database_session: DatabaseSessionDep,
+    _staff_account: StaffAccountDep,
+    status: str | None = Query(
+        None,
+        description="Optional filter: in_queue | important | in_progress | transferred_to_engineers",
+    ),
+) -> TicketPoolListResponse:
+    """
+    Common ticket pool for agents (and admins).
+    Any free agent can claim an unassigned ticket from this list.
+    """
+    tickets = list_common_ticket_pool(database_session, status_filter=status)
+    items: list[PoolTicketItem] = []
+    for ticket in tickets:
+        assignee = None
+        if ticket.assigned_agent is not None:
+            agent = ticket.assigned_agent
+            assignee = PoolTicketAssignee(
+                user_account_id=agent.user_account_id,
+                full_name=agent.full_name,
+                agent_badge=format_agent_badge(agent.user_account_id),
+            )
+        items.append(
+            PoolTicketItem(
+                support_ticket_id=ticket.support_ticket_id,
+                status=ticket.status,
+                created_at=ticket.created_at,
+                problem_reason=ticket.problem_reason,
+                problem_reason_label=PROBLEM_REASON_LABELS_RU.get(
+                    ticket.problem_reason,
+                    ticket.problem_reason,
+                ),
+                assigned_agent=assignee,
+            )
+        )
+    return TicketPoolListResponse(items=items, total_ticket_count=len(items))
+
+
+@tickets_router.post(
+    "/{support_ticket_id}/claim",
+    response_model=SupportTicketResponse,
+)
+def claim_support_ticket(
+    support_ticket_id: int,
+    database_session: DatabaseSessionDep,
+    agent_account: AgentAccountDep,
+) -> SupportTicketResponse:
+    """Agent takes a ticket from the common pool into work."""
+    try:
+        ticket = claim_ticket_from_pool(
+            database_session,
+            support_ticket_id=support_ticket_id,
+            agent_account=agent_account,
+        )
+    except TicketNotAvailableForClaimError as error:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Ticket is not available in the pool",
+        ) from error
+    except TicketAlreadyAssignedError as error:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Ticket already assigned to another agent",
+        ) from error
+
+    logger.info(
+        "Ticket claimed | ticket_id=%s agent_id=%s",
+        support_ticket_id,
+        agent_account.user_account_id,
+    )
+    return SupportTicketResponse.model_validate(ticket)
 
 
 def _assert_user_can_view_ticket(current_user_account, ticket) -> None:

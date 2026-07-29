@@ -39,6 +39,26 @@ class SupportTicketListResponse(BaseModel):
     page_size: int
 
 
+class PoolTicketAssignee(BaseModel):
+    user_account_id: int
+    full_name: str
+    agent_badge: str  # e.g. "Агент #001"
+
+
+class PoolTicketItem(BaseModel):
+    support_ticket_id: int
+    status: TicketStatus
+    created_at: datetime
+    problem_reason: str
+    problem_reason_label: str
+    assigned_agent: PoolTicketAssignee | None = None
+
+
+class TicketPoolListResponse(BaseModel):
+    items: list[PoolTicketItem]
+    total_ticket_count: int
+
+
 class TicketProblemReasonOption(BaseModel):
     value: str
     label_ru: str
