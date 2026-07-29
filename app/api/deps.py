@@ -8,6 +8,7 @@ from jose import JWTError
 from sqlalchemy.orm import Session
 
 from app.core.database import get_database_session
+from app.core.roles import role_value
 from app.core.security import decode_access_token
 from app.models import UserAccount, UserRole
 from app.services.user_account_service import get_user_account_by_id
@@ -50,13 +51,8 @@ def get_current_user_account(
 CurrentUserAccountDep = Annotated[UserAccount, Depends(get_current_user_account)]
 
 
-def _role_value(user_account: UserAccount) -> str:
-    role = user_account.role
-    return role.value if hasattr(role, "value") else str(role)
-
-
 def require_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
-    if _role_value(current_user_account) != UserRole.ADMIN.value:
+    if role_value(current_user_account) != UserRole.ADMIN.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Admin role required",
@@ -65,7 +61,7 @@ def require_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccou
 
 
 def require_agent_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
-    if _role_value(current_user_account) != UserRole.AGENT.value:
+    if role_value(current_user_account) != UserRole.AGENT.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Agent role required",
@@ -74,7 +70,7 @@ def require_agent_role(current_user_account: CurrentUserAccountDep) -> UserAccou
 
 
 def require_agent_or_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
-    if _role_value(current_user_account) not in {
+    if role_value(current_user_account) not in {
         UserRole.AGENT.value,
         UserRole.ADMIN.value,
     }:
@@ -86,7 +82,7 @@ def require_agent_or_admin_role(current_user_account: CurrentUserAccountDep) -> 
 
 
 def require_client_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
-    if _role_value(current_user_account) != UserRole.CLIENT.value:
+    if role_value(current_user_account) != UserRole.CLIENT.value:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Client role required",

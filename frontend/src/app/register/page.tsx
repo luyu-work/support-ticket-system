@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import { AuthField } from "@/components/auth/AuthField";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { ApiError, registerClient } from "@/lib/api";
 import { getPostLoginPath, saveAuthSession } from "@/lib/auth-storage";
 
@@ -40,81 +40,46 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="auth-page">
-      <BrandLogo />
-      <div className="auth-wrapper">
-        <div className="auth-title-block">
-          <h1 className="auth-title">Регистрация</h1>
-          <p className="auth-subtitle">
-            Создайте аккаунт, чтобы отправлять обращения в поддержку
-          </p>
-        </div>
-
-        <form id="register-form" className="auth-form" onSubmit={onSubmit} noValidate>
-          <div className="field">
-            <label htmlFor="full_name">ФИО</label>
-            <div className="input-shell">
-              <input
-                id="full_name"
-                name="full_name"
-                type="text"
-                autoComplete="name"
-                placeholder="Иван Иванов"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="email">Почта</label>
-            <div className="input-shell">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="password">Пароль</label>
-            <div className="input-shell">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                placeholder="••••••••"
-                minLength={8}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <p className={`auth-message ${messageType}`} aria-live="polite">
-            {message}
-          </p>
-        </form>
-      </div>
-
-      <div className="auth-actions">
-        <button className="btn-primary" type="submit" form="register-form" disabled={loading}>
-          Зарегистрироваться
-        </button>
-        <p className="auth-footer">
-          <span>Уже есть аккаунт?</span>
-          <Link href="/login">Войти</Link>
-        </p>
-      </div>
-    </main>
+    <AuthShell
+      title="Регистрация"
+      subtitle="Создайте аккаунт, чтобы отправлять обращения в поддержку"
+      formId="register-form"
+      onSubmit={onSubmit}
+      message={message}
+      messageType={messageType}
+      submitLabel="Зарегистрироваться"
+      loading={loading}
+      footerHint="Уже есть аккаунт?"
+      footerLinkHref="/login"
+      footerLinkLabel="Войти"
+    >
+      <AuthField
+        id="full_name"
+        label="ФИО"
+        autoComplete="name"
+        placeholder="Иван Иванов"
+        value={fullName}
+        onChange={setFullName}
+      />
+      <AuthField
+        id="email"
+        label="Почта"
+        type="email"
+        autoComplete="username"
+        placeholder="example@gmail.com"
+        value={email}
+        onChange={setEmail}
+      />
+      <AuthField
+        id="password"
+        label="Пароль"
+        type="password"
+        autoComplete="new-password"
+        placeholder="••••••••"
+        minLength={8}
+        value={password}
+        onChange={setPassword}
+      />
+    </AuthShell>
   );
 }

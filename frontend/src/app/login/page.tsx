@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { BrandLogo } from "@/components/ui/BrandLogo";
+import { AuthField } from "@/components/auth/AuthField";
+import { AuthShell } from "@/components/auth/AuthShell";
 import { ApiError, loginUser } from "@/lib/api";
 import { getPostLoginPath, saveAuthSession } from "@/lib/auth-storage";
 
@@ -39,64 +39,37 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="auth-page">
-      <BrandLogo />
-      <div className="auth-wrapper">
-        <div className="auth-title-block">
-          <h1 className="auth-title">Вход</h1>
-          <p className="auth-subtitle">
-            Чтобы воспользоваться системой, пожалуйста, заполните поля ниже
-          </p>
-        </div>
-
-        <form id="login-form" className="auth-form" onSubmit={onSubmit} noValidate>
-          <div className="field">
-            <label htmlFor="email">Почта</label>
-            <div className="input-shell">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="username"
-                placeholder="example@gmail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <div className="field">
-            <label htmlFor="password">Пароль</label>
-            <div className="input-shell">
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-          </div>
-
-          <p className={`auth-message ${messageType}`} aria-live="polite">
-            {message}
-          </p>
-        </form>
-      </div>
-
-      <div className="auth-actions">
-        <button className="btn-primary" type="submit" form="login-form" disabled={loading}>
-          Войти
-        </button>
-        <p className="auth-footer">
-          <span>Нет аккаунта?</span>
-          <Link href="/register">Зарегистрироваться</Link>
-        </p>
-      </div>
-    </main>
+    <AuthShell
+      title="Вход"
+      subtitle="Чтобы воспользоваться системой, пожалуйста, заполните поля ниже"
+      formId="login-form"
+      onSubmit={onSubmit}
+      message={message}
+      messageType={messageType}
+      submitLabel="Войти"
+      loading={loading}
+      footerHint="Нет аккаунта?"
+      footerLinkHref="/register"
+      footerLinkLabel="Зарегистрироваться"
+    >
+      <AuthField
+        id="email"
+        label="Почта"
+        type="email"
+        autoComplete="username"
+        placeholder="example@gmail.com"
+        value={email}
+        onChange={setEmail}
+      />
+      <AuthField
+        id="password"
+        label="Пароль"
+        type="password"
+        autoComplete="current-password"
+        placeholder="••••••••"
+        value={password}
+        onChange={setPassword}
+      />
+    </AuthShell>
   );
 }

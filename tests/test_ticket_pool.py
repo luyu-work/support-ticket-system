@@ -5,47 +5,20 @@ from datetime import UTC, datetime, timedelta
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.settings import get_application_settings
 from app.models import SupportTicket, TicketStatus
-from app.services.seed_staff_accounts import seed_default_staff_accounts
 from app.services.support_ticket_service import (
     IMPORTANT_AFTER_HOURS,
     promote_stale_queue_tickets_to_important,
 )
+from tests.helpers import agent_token as get_agent_token, register_client
 
-
-def _register_client(api_test_client: TestClient, email: str) -> str:
-    response = api_test_client.post(
-        "/auth/register",
-        json={
-            "email": email,
-            "full_name": "Pool Client",
-            "password": "ClientPass123",
-        },
-    )
-    assert response.status_code == 201
-    return response.json()["access_token"]
-
-
-def _agent_token(api_test_client: TestClient, database_session: Session) -> str:
-    settings = get_application_settings()
-    seed_default_staff_accounts(database_session, settings)
-    login = api_test_client.post(
-        "/auth/login",
-        json={
-            "email": settings.seed_agent_email,
-            "password": settings.seed_agent_password,
-        },
-    )
-    assert login.status_code == 200
-    return login.json()["access_token"]
 
 
 def test_agent_sees_common_pool(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    client_token = _register_client(api_test_client, "pool.client@example.com")
+    client_token = register_client(api_test_client, "pool.client@example.com")
     create = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -56,7 +29,7 @@ def test_agent_sees_common_pool(
     )
     assert create.status_code == 201
 
-    agent_token = _agent_token(api_test_client, database_session)
+    agent_token = get_agent_token(api_test_client, database_session)
     pool = api_test_client.get(
         "/tickets/pool",
         headers={"Authorization": f"Bearer {agent_token}"},
@@ -69,7 +42,7 @@ def test_agent_sees_common_pool(
 
 
 def test_client_cannot_access_pool(api_test_client: TestClient) -> None:
-    client_token = _register_client(api_test_client, "no.pool@example.com")
+    client_token = register_client(api_test_client, "no.pool@example.com")
     response = api_test_client.get(
         "/tickets/pool",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -81,14 +54,14 @@ def test_closed_ticket_moves_to_archive(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    client_token = _register_client(api_test_client, "archive.client@example.com")
+    client_token = register_client(api_test_client, "archive.client@example.com")
     create = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
         data={"problem_reason": "other", "description": "will be archived"},
     )
     ticket_id = create.json()["support_ticket_id"]
-    agent_token = _agent_token(api_test_client, database_session)
+    agent_token = get_agent_token(api_test_client, database_session)
     headers = {"Authorization": f"Bearer {agent_token}"}
 
     api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)
@@ -121,7 +94,7 @@ def test_ticket_activity_log_and_agent_comment(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    client_token = _register_client(api_test_client, "log.client@example.com")
+    client_token = register_client(api_test_client, "log.client@example.com")
     create = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -131,7 +104,7 @@ def test_ticket_activity_log_and_agent_comment(
     # Client-facing create response must not expose activity log
     assert create.json().get("activity_log") == []
 
-    agent_token = _agent_token(api_test_client, database_session)
+    agent_token = get_agent_token(api_test_client, database_session)
     headers = {"Authorization": f"Bearer {agent_token}"}
 
     claim = api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)
@@ -173,7 +146,7 @@ def test_agent_claims_ticket(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    client_token = _register_client(api_test_client, "claim.client@example.com")
+    client_token = register_client(api_test_client, "claim.client@example.com")
     create = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -183,7 +156,7 @@ def test_agent_claims_ticket(
         },
     )
     ticket_id = create.json()["support_ticket_id"]
-    agent_token = _agent_token(api_test_client, database_session)
+    agent_token = get_agent_token(api_test_client, database_session)
 
     claim = api_test_client.post(
         f"/tickets/{ticket_id}/claim",
@@ -199,14 +172,14 @@ def test_agent_closes_and_transfers_ticket(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    client_token = _register_client(api_test_client, "resolve.client@example.com")
+    client_token = register_client(api_test_client, "resolve.client@example.com")
     create = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
         data={"problem_reason": "other", "description": "resolve me"},
     )
     ticket_id = create.json()["support_ticket_id"]
-    agent_token = _agent_token(api_test_client, database_session)
+    agent_token = get_agent_token(api_test_client, database_session)
     headers = {"Authorization": f"Bearer {agent_token}"}
 
     claim = api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)

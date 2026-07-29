@@ -17,7 +17,7 @@
 
 .agent-top-row {
   width: 100%;
-  max-width: 872px;
+  max-width: var(--staff-content-width);
   display: flex;
   align-items: stretch;
   justify-content: space-between;
@@ -120,7 +120,7 @@
 
 .agent-main-card {
   width: 100%;
-  max-width: 872px;
+  max-width: var(--staff-content-width);
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
@@ -438,9 +438,9 @@
 }
 
 .schedule-preset.is-active {
-  border-color: rgba(55, 97, 243, 0.45);
-  background: rgba(55, 97, 243, 0.1);
-  color: #3761f3;
+  border-color: var(--accent-45);
+  background: var(--accent-10);
+  color: var(--accent);
 }
 
 .schedule-days {
@@ -468,9 +468,9 @@
 }
 
 .schedule-day.is-active {
-  border-color: rgba(55, 97, 243, 0.45);
-  background: rgba(55, 97, 243, 0.1);
-  color: #3761f3;
+  border-color: var(--accent-45);
+  background: var(--accent-10);
+  color: var(--accent);
 }
 
 .schedule-time-summary {

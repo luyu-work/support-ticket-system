@@ -9,18 +9,35 @@ from pydantic import BaseModel, Field, field_validator
 WEEKDAY_LABELS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
 
-def _normalize_email(value: str) -> str:
+def normalize_email(value: str) -> str:
     return value.strip().lower()
 
 
-def _validate_email(value: str) -> str:
-    email = _normalize_email(value)
-    # Simple check (EmailStr rejects some internal domains we may use)
-    if not re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+def validate_email(value: str) -> str:
+    email = normalize_email(value)
+    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
         raise ValueError("Некорректный email")
     if len(email) > 255:
         raise ValueError("Email слишком длинный")
     return email
+
+
+def validate_work_days(value: list[int]) -> list[int]:
+    cleaned = sorted({day for day in value if 0 <= day <= 6})
+    if not cleaned:
+        raise ValueError("Выберите хотя бы один рабочий день")
+    return cleaned
+
+
+def validate_hh_mm(value: str) -> str:
+    text = value.strip()
+    parts = text.split(":")
+    if len(parts) != 2:
+        raise ValueError("Время в формате HH:MM")
+    hour, minute = int(parts[0]), int(parts[1])
+    if not (0 <= hour <= 23 and 0 <= minute <= 59):
+        raise ValueError("Некорректное время")
+    return f"{hour:02d}:{minute:02d}"
 
 
 class AgentCreateRequest(BaseModel):
@@ -34,28 +51,18 @@ class AgentCreateRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, value: str) -> str:
-        return _validate_email(value)
+    def _email(cls, value: str) -> str:
+        return validate_email(value)
 
     @field_validator("work_days")
     @classmethod
-    def validate_work_days(cls, value: list[int]) -> list[int]:
-        cleaned = sorted({day for day in value if 0 <= day <= 6})
-        if not cleaned:
-            raise ValueError("Выберите хотя бы один рабочий день")
-        return cleaned
+    def _days(cls, value: list[int]) -> list[int]:
+        return validate_work_days(value)
 
     @field_validator("work_time_start", "work_time_end")
     @classmethod
-    def validate_time(cls, value: str) -> str:
-        text = value.strip()
-        parts = text.split(":")
-        if len(parts) != 2:
-            raise ValueError("Время в формате HH:MM")
-        hour, minute = int(parts[0]), int(parts[1])
-        if not (0 <= hour <= 23 and 0 <= minute <= 59):
-            raise ValueError("Некорректное время")
-        return f"{hour:02d}:{minute:02d}"
+    def _time(cls, value: str) -> str:
+        return validate_hh_mm(value)
 
 
 class AgentUpdateRequest(BaseModel):
@@ -69,34 +76,18 @@ class AgentUpdateRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def validate_email(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        return _validate_email(value)
+    def _email(cls, value: str | None) -> str | None:
+        return None if value is None else validate_email(value)
 
     @field_validator("work_days")
     @classmethod
-    def validate_work_days(cls, value: list[int] | None) -> list[int] | None:
-        if value is None:
-            return None
-        cleaned = sorted({day for day in value if 0 <= day <= 6})
-        if not cleaned:
-            raise ValueError("Выберите хотя бы один рабочий день")
-        return cleaned
+    def _days(cls, value: list[int] | None) -> list[int] | None:
+        return None if value is None else validate_work_days(value)
 
     @field_validator("work_time_start", "work_time_end")
     @classmethod
-    def validate_time(cls, value: str | None) -> str | None:
-        if value is None:
-            return None
-        text = value.strip()
-        parts = text.split(":")
-        if len(parts) != 2:
-            raise ValueError("Время в формате HH:MM")
-        hour, minute = int(parts[0]), int(parts[1])
-        if not (0 <= hour <= 23 and 0 <= minute <= 59):
-            raise ValueError("Некорректное время")
-        return f"{hour:02d}:{minute:02d}"
+    def _time(cls, value: str | None) -> str | None:
+        return None if value is None else validate_hh_mm(value)
 
 
 class AgentAdminResponse(BaseModel):
@@ -112,7 +103,6 @@ class AgentAdminResponse(BaseModel):
     work_time_start: str | None
     work_time_end: str | None
     work_time_label: str
-    # Last password set via admin UI (not recoverable from hash otherwise)
     password: str | None = None
     created_at: datetime
 

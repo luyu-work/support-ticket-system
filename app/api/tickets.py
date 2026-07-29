@@ -15,6 +15,7 @@ from app.api.deps import (
     DatabaseSessionDep,
     StaffAccountDep,
 )
+from app.core.roles import is_client, is_staff
 from app.models import TicketAttachment
 from app.schemas.tickets import (
     PROBLEM_REASON_LABELS_RU,
@@ -290,12 +291,10 @@ def transfer_support_ticket_to_engineers(
 
 
 def _assert_user_can_view_ticket(current_user_account, ticket) -> None:
-    role_value = (
-        current_user_account.role.value
-        if hasattr(current_user_account.role, "value")
-        else str(current_user_account.role)
-    )
-    if role_value == "client" and ticket.client_author_id != current_user_account.user_account_id:
+    if (
+        is_client(current_user_account)
+        and ticket.client_author_id != current_user_account.user_account_id
+    ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
 
 
@@ -314,14 +313,11 @@ def get_support_ticket_detail(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
     _assert_user_can_view_ticket(current_user_account, ticket)
-    role_value = (
-        current_user_account.role.value
-        if hasattr(current_user_account.role, "value")
-        else str(current_user_account.role)
-    )
     # Activity log is staff-only; clients still receive agent comments
-    is_staff = role_value in {"agent", "admin"}
-    return to_support_ticket_response(ticket, include_activity_log=is_staff)
+    return to_support_ticket_response(
+        ticket,
+        include_activity_log=is_staff(current_user_account),
+    )
 
 
 @tickets_router.get(

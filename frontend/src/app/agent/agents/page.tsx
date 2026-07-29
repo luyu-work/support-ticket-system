@@ -1,20 +1,24 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { AgentEditorModal } from "@/components/agent/AgentEditorModal";
 import { AgentStaffShell } from "@/components/agent/AgentStaffShell";
 import { SortChevrons } from "@/components/agent/SortChevrons";
+import { useRequireRole } from "@/hooks/useRequireRole";
 import { fetchAdminAgents } from "@/lib/api";
-import { getAccessToken, getStoredUserAccount } from "@/lib/auth-storage";
-import type { AgentAdmin, UserAccount } from "@/types/api";
+import {
+  applyDir,
+  compareNumbers,
+  compareStrings,
+  nextSortState,
+  type SortDir,
+} from "@/lib/sort";
+import type { AgentAdmin } from "@/types/api";
 
 type SortKey = "number" | "name" | "schedule" | "time" | "online";
-type SortDir = "asc" | "desc";
 
 export default function AdminAgentsPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<UserAccount | null>(null);
+  const user = useRequireRole("admin");
   const [items, setItems] = useState<AgentAdmin[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -39,51 +43,31 @@ export default function AdminAgentsPage() {
   }, []);
 
   useEffect(() => {
-    const token = getAccessToken();
-    const account = getStoredUserAccount();
-    if (!token || !account) {
-      router.replace("/login");
-      return;
-    }
-    if (account.role !== "admin") {
-      if (account.role === "agent") router.replace("/agent/pool");
-      else if (account.role === "client") router.replace("/tickets");
-      else router.replace("/home");
-      return;
-    }
-    setUser(account);
-  }, [router]);
-
-  useEffect(() => {
     if (user) void loadAgents();
   }, [user, loadAgents]);
 
   const sorted = useMemo(() => {
-    const copy = [...items];
-    copy.sort((a, b) => {
+    return [...items].sort((a, b) => {
       let cmp = 0;
       if (sortKey === "number") {
-        cmp = (a.agent_number ?? 99999) - (b.agent_number ?? 99999);
+        cmp = compareNumbers(a.agent_number ?? 99999, b.agent_number ?? 99999);
       } else if (sortKey === "name") {
-        cmp = a.full_name.localeCompare(b.full_name, "ru");
+        cmp = compareStrings(a.full_name, b.full_name);
       } else if (sortKey === "schedule") {
-        cmp = a.work_days_label.localeCompare(b.work_days_label, "ru");
+        cmp = compareStrings(a.work_days_label, b.work_days_label);
       } else if (sortKey === "time") {
-        cmp = (a.work_time_label || "").localeCompare(b.work_time_label || "", "ru");
+        cmp = compareStrings(a.work_time_label || "", b.work_time_label || "");
       } else {
-        cmp = Number(b.is_online) - Number(a.is_online);
+        cmp = compareNumbers(Number(b.is_online), Number(a.is_online));
       }
-      return sortDir === "asc" ? cmp : -cmp;
+      return applyDir(cmp, sortDir);
     });
-    return copy;
   }, [items, sortKey, sortDir]);
 
   function toggleSort(key: SortKey) {
-    if (sortKey === key) setSortDir((d) => (d === "asc" ? "desc" : "asc"));
-    else {
-      setSortKey(key);
-      setSortDir("asc");
-    }
+    const next = nextSortState(sortKey, sortDir, key, "asc");
+    setSortKey(next.key);
+    setSortDir(next.dir);
   }
 
   function openCreate() {

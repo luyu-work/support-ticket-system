@@ -3,6 +3,29 @@
 @import "../styles/tickets.css";
 @import "../styles/agent.css";
 
+/* Design tokens (shared by auth / tickets / agent) */
+:root {
+  --page-bg: #f8f8f8;
+  --text: #151515;
+  --text-60: rgba(21, 21, 21, 0.6);
+  --text-40: rgba(21, 21, 21, 0.4);
+  --border-10: rgba(21, 21, 21, 0.1);
+  --accent: #3761f3;
+  --accent-10: rgba(55, 97, 243, 0.1);
+  --accent-45: rgba(55, 97, 243, 0.45);
+  --accent-90: rgba(55, 97, 243, 0.9);
+  --accent-80: rgba(55, 97, 243, 0.8);
+  --button-text: #f1f5ff;
+  --danger: #d64545;
+  --danger-soft: #ed5e5e;
+  --success: #2f9e44;
+  --radius-input: 12px;
+  --radius-card: 16px;
+  --form-width: 424px;
+  --staff-content-width: 872px;
+  --font: "Onest", system-ui, -apple-system, sans-serif;
+}
+
 html,
 body {
   max-width: 100vw;

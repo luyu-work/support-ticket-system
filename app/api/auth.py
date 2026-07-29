@@ -6,7 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentUserAccountDep, DatabaseSessionDep
 from app.core.security import create_access_token
-from app.models.enums import UserRole
+from app.core.roles import is_agent
 from app.schemas.auth import (
     AccessTokenResponse,
     ClientRegistrationRequest,
@@ -94,13 +94,8 @@ def login_user_account(
             detail="User account is inactive",
         ) from error
 
-    # Agents mark themselves online so admin dashboard can show presence
-    role_value = (
-        user_account.role.value
-        if hasattr(user_account.role, "value")
-        else str(user_account.role)
-    )
-    if role_value == UserRole.AGENT.value:
+    # Agents mark themselves online for admin agent list
+    if is_agent(user_account):
         user_account = set_user_online_status(
             database_session,
             user_account=user_account,

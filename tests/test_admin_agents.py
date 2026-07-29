@@ -3,44 +3,14 @@
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
-from app.core.settings import get_application_settings
-from app.services.seed_staff_accounts import seed_default_staff_accounts
-
-
-def _admin_token(api_test_client: TestClient, database_session: Session) -> str:
-    settings = get_application_settings()
-    seed_default_staff_accounts(database_session, settings)
-    login = api_test_client.post(
-        "/auth/login",
-        json={
-            "email": settings.seed_admin_email,
-            "password": settings.seed_admin_password,
-        },
-    )
-    assert login.status_code == 200
-    return login.json()["access_token"]
-
-
-def _agent_token(api_test_client: TestClient, database_session: Session) -> str:
-    settings = get_application_settings()
-    seed_default_staff_accounts(database_session, settings)
-    login = api_test_client.post(
-        "/auth/login",
-        json={
-            "email": settings.seed_agent_email,
-            "password": settings.seed_agent_password,
-        },
-    )
-    assert login.status_code == 200
-    return login.json()["access_token"]
+from tests.helpers import admin_token, agent_token, auth_headers
 
 
 def test_admin_lists_and_creates_agent(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    admin_token = _admin_token(api_test_client, database_session)
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = auth_headers(admin_token(api_test_client, database_session))
 
     listed = api_test_client.get("/admin/agents", headers=headers)
     assert listed.status_code == 200
@@ -82,8 +52,7 @@ def test_admin_updates_and_deletes_agent(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    admin_token = _admin_token(api_test_client, database_session)
-    headers = {"Authorization": f"Bearer {admin_token}"}
+    headers = auth_headers(admin_token(api_test_client, database_session))
 
     created = api_test_client.post(
         "/admin/agents",
@@ -125,7 +94,6 @@ def test_admin_updates_and_deletes_agent(
     ids = {item["user_account_id"] for item in listed.json()["items"]}
     assert agent_id not in ids
 
-    # Soft-deleted agent cannot log in
     login = api_test_client.post(
         "/auth/login",
         json={"email": created.json()["email"], "password": "TempPass42"},
@@ -137,10 +105,9 @@ def test_agent_cannot_manage_agents(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    agent_token = _agent_token(api_test_client, database_session)
     response = api_test_client.get(
         "/admin/agents",
-        headers={"Authorization": f"Bearer {agent_token}"},
+        headers=auth_headers(agent_token(api_test_client, database_session)),
     )
     assert response.status_code == 403
 
@@ -149,9 +116,7 @@ def test_duplicate_agent_number_rejected(
     api_test_client: TestClient,
     database_session: Session,
 ) -> None:
-    admin_token = _admin_token(api_test_client, database_session)
-    headers = {"Authorization": f"Bearer {admin_token}"}
-    # seed agent is number 1
+    headers = auth_headers(admin_token(api_test_client, database_session))
     response = api_test_client.post(
         "/admin/agents",
         headers=headers,

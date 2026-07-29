@@ -1,21 +1,4 @@
-/* Auth screens */
-
-:root {
-  --page-bg: #f8f8f8;
-  --text: #151515;
-  --text-60: rgba(21, 21, 21, 0.6);
-  --text-40: rgba(21, 21, 21, 0.4);
-  --border-10: rgba(21, 21, 21, 0.1);
-  --accent: #3761f3;
-  --accent-90: rgba(55, 97, 243, 0.9);
-  --accent-80: rgba(55, 97, 243, 0.8);
-  --button-text: #f1f5ff;
-  --danger: #d64545;
-  --success: #2f9e44;
-  --radius-input: 12px;
-  --form-width: 424px;
-  --font: "Onest", system-ui, -apple-system, sans-serif;
-}
+/* Auth screens (tokens live in globals.css :root) */
 
 * {
   box-sizing: border-box;
