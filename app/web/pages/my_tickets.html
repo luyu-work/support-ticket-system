@@ -97,6 +97,22 @@
       </div>
     </div>
 
+    <!-- Fullscreen photo viewer -->
+    <div id="photo-lightbox" class="photo-lightbox" hidden>
+      <div class="photo-lightbox-backdrop" data-close-lightbox></div>
+      <img id="photo-lightbox-image" class="photo-lightbox-image" alt="Просмотр фото" />
+      <button
+        type="button"
+        class="icon-button photo-lightbox-close"
+        data-close-lightbox
+        aria-label="Закрыть фото"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <path d="M12 12L8.00001 8.00001M8.00001 8.00001L4 4M8.00001 8.00001L12 4M8.00001 8.00001L4 12" stroke="#F1F5FF" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
+
     <!-- Create ticket modal -->
     <div id="create-ticket-modal" class="ticket-modal" hidden>
       <div class="ticket-modal-backdrop" data-close-create-modal></div>

@@ -158,6 +158,45 @@ async function fetchTicketAttachmentObjectUrl(supportTicketId, attachmentId) {
   return objectUrl;
 }
 
+function isPhotoLightboxOpen() {
+  const lightbox = document.getElementById("photo-lightbox");
+  return Boolean(lightbox && !lightbox.hidden);
+}
+
+function openPhotoLightbox(imageSrc, imageAlt) {
+  const lightbox = document.getElementById("photo-lightbox");
+  const lightboxImage = document.getElementById("photo-lightbox-image");
+  if (!lightbox || !lightboxImage) return;
+
+  lightboxImage.src = imageSrc;
+  lightboxImage.alt = imageAlt || "Просмотр фото";
+  lightbox.hidden = false;
+}
+
+function closePhotoLightbox() {
+  const lightbox = document.getElementById("photo-lightbox");
+  const lightboxImage = document.getElementById("photo-lightbox-image");
+  if (lightbox) lightbox.hidden = true;
+  if (lightboxImage) {
+    lightboxImage.removeAttribute("src");
+    lightboxImage.alt = "";
+  }
+}
+
+function initPhotoLightbox() {
+  const lightbox = document.getElementById("photo-lightbox");
+  if (!lightbox) return;
+
+  lightbox.querySelectorAll("[data-close-lightbox]").forEach((element) => {
+    element.addEventListener("click", (event) => {
+      // backdrop and close button close; click on the large image does not
+      if (element.classList.contains("photo-lightbox-image")) return;
+      event.preventDefault();
+      closePhotoLightbox();
+    });
+  });
+}
+
 async function renderTicketDetailPhotos(ticket) {
   const photosField = document.getElementById("ticket-detail-photos-field");
   const photosList = document.getElementById("ticket-detail-photos");
@@ -168,11 +207,12 @@ async function renderTicketDetailPhotos(ticket) {
 
   const attachments = ticket.attachments || [];
   if (!attachments.length) {
+    // No photos → hide whole block including "Фотографии" label
     photosField.hidden = true;
     return;
   }
 
-  photosField.hidden = false;
+  let loadedPhotoCount = 0;
 
   for (const attachment of attachments) {
     try {
@@ -184,11 +224,27 @@ async function renderTicketDetailPhotos(ticket) {
       image.className = "ticket-detail-photo";
       image.src = objectUrl;
       image.alt = attachment.original_file_name || "Фото";
+      image.tabIndex = 0;
+      image.setAttribute("role", "button");
+      image.title = "Открыть фото";
+      image.addEventListener("click", () => {
+        openPhotoLightbox(objectUrl, image.alt);
+      });
+      image.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          openPhotoLightbox(objectUrl, image.alt);
+        }
+      });
       photosList.appendChild(image);
+      loadedPhotoCount += 1;
     } catch {
       // skip broken file
     }
   }
+
+  // Show label only if at least one photo actually loaded
+  photosField.hidden = loadedPhotoCount === 0;
 }
 
 async function openTicketDetailModal(ticket) {
@@ -232,6 +288,7 @@ async function openTicketDetailModal(ticket) {
 }
 
 function closeTicketDetailModal() {
+  closePhotoLightbox();
   const modal = document.getElementById("ticket-detail-modal");
   if (modal) modal.hidden = true;
   revokeDetailPhotoObjectUrls();
@@ -641,6 +698,12 @@ function initModalKeyboard() {
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
 
+    // Photo zoom first, then other modals
+    if (isPhotoLightboxOpen()) {
+      closePhotoLightbox();
+      return;
+    }
+
     const createModal = document.getElementById("create-ticket-modal");
     const detailModal = document.getElementById("ticket-detail-modal");
 
@@ -699,6 +762,7 @@ async function initMyTicketsPage() {
   initLogoutButton();
   initCreateTicketModal();
   initDetailModal();
+  initPhotoLightbox();
   initModalKeyboard();
   await renderMyTicketsList();
 }
