@@ -64,7 +64,7 @@ docker compose up -d postgres
 ### 3. Run API
 
 ```bash
-python project.py
+python start_project.py
 ```
 
 - API: http://127.0.0.1:8000  

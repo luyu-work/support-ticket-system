@@ -2,7 +2,7 @@
 Local launcher for the Support Ticket System API.
 
 Usage (from project folder, with venv active):
-    python project.py
+    python start_project.py
 """
 
 import uvicorn
