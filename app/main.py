@@ -1,9 +1,8 @@
 import logging
 from contextlib import asynccontextmanager
-from pathlib import Path
 
 from fastapi import FastAPI
-from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.router import api_router
 from app.core.database import create_database_tables_if_needed
@@ -12,8 +11,6 @@ from app.core.settings import get_application_settings
 from app.services.seed_staff_accounts import seed_default_staff_accounts_on_startup
 
 logger = logging.getLogger(__name__)
-
-WEB_STATIC_DIRECTORY = Path(__file__).resolve().parent / "web" / "static"
 
 
 @asynccontextmanager
@@ -32,15 +29,23 @@ def create_ticket_system_application() -> FastAPI:
     ticket_system_application = FastAPI(
         title="Support Ticket System",
         description="Clients create tickets; agents work on them; admin watches the pool.",
-        version="0.5.1",
+        version="0.6.0",
         debug=settings.application_debug,
         lifespan=ticket_system_lifespan,
     )
-    ticket_system_application.mount(
-        "/static",
-        StaticFiles(directory=str(WEB_STATIC_DIRECTORY)),
-        name="static",
+
+    # Next.js dev server (and local production frontend)
+    ticket_system_application.add_middleware(
+        CORSMiddleware,
+        allow_origins=[
+            "http://localhost:3000",
+            "http://127.0.0.1:3000",
+        ],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
+
     ticket_system_application.include_router(api_router)
 
     logger.info(

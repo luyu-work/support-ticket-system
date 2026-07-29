@@ -4,44 +4,36 @@
 
 ## Стек
 
+**Backend**
 - FastAPI
-- PostgreSQL (или SQLite для локальной разработки)
+- PostgreSQL (или SQLite локально)
 - SQLAlchemy + Alembic
 - JWT
-- Docker (опционально)
 - pytest
 
-## Структура проекта
+**Frontend**
+- Next.js (App Router)
+- React
+- TypeScript
+
+## Структура
 
 ```
-app/
-  main.py              # factory приложения FastAPI + entrypoint
-  core/                # settings, database, logging
-  api/                 # HTTP-роуты
-  models/              # UserAccount, SupportTicket, comments, attachments
-  schemas/             # тела request/response
-  services/            # бизнес-логика
-  web/                 # HTML-страницы и static (CSS/JS)
-alembic/               # миграции БД
+app/                 # FastAPI backend (только API)
+frontend/            # Next.js UI
+  src/app/           # страницы (login, register, tickets, home)
+  src/components/    # React-компоненты
+  src/lib/           # api client, auth storage, labels
+  src/styles/        # CSS (разбитые стили auth / tickets)
+alembic/
 tests/
-docker-compose.yml
-start_project.py       # локальный запуск API
 ```
-
-### Модели БД
-
-| Model | Table | Назначение |
-|-------|--------|------------|
-| `UserAccount` | `user_accounts` | client / agent / admin |
-| `SupportTicket` | `support_tickets` | тикет, статус, причина |
-| `TicketComment` | `ticket_comments` | комментарии к тикету |
-| `TicketAttachment` | `ticket_attachments` | фото (до 5 на тикет — в логике приложения) |
 
 ## Быстрый старт (Windows PowerShell)
 
-Команды вводите **по одной строке**. Не копируйте несколько строк в одну.
+Команды **по одной строке**.
 
-### 1. Окружение Python
+### 1. Backend API
 
 ```powershell
 cd C:\Users\lubu\Desktop\PythonProject
@@ -49,120 +41,92 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
 copy .env.example .env
+python start_project.py
 ```
 
-В `.env` по умолчанию используется **SQLite** (Docker не нужен):
+API: http://127.0.0.1:8000  
+Docs: http://127.0.0.1:8000/docs  
+
+В `.env` по умолчанию SQLite:
 
 ```env
 DATABASE_URL_OVERRIDE=sqlite:///./ticket_system_local.db
 ```
 
-### 2. Запуск API (без Docker)
+### 2. Frontend (Next.js)
+
+Отдельное окно терминала:
 
 ```powershell
-.\.venv\Scripts\Activate.ps1
-python start_project.py
+cd C:\Users\lubu\Desktop\PythonProject\frontend
+copy .env.example .env.local
+npm install
+npm run dev
 ```
 
-Таблицы и учётки admin/agent создаются при старте (если их ещё нет).
+UI: **http://127.0.0.1:3000**
 
-Полезные адреса:
+`NEXT_PUBLIC_API_BASE_URL` в `frontend/.env.local` указывает на API (`http://127.0.0.1:8000`).
 
-- UI вход: http://127.0.0.1:8000/login  
-- API: http://127.0.0.1:8000  
-- Docs: http://127.0.0.1:8000/docs  
-- Health: http://127.0.0.1:8000/health  
-
-### 3. (Опционально) PostgreSQL через Docker
-
-Нужен [Docker Desktop](https://www.docker.com/products/docker-desktop/).  
-В `.env` уберите или закомментируйте `DATABASE_URL_OVERRIDE`, затем:
+### 3. (Опционально) PostgreSQL
 
 ```powershell
 docker compose up -d postgres
+# в .env убрать DATABASE_URL_OVERRIDE
 python -m alembic upgrade head
 python start_project.py
 ```
 
-Важно: Alembic запускайте через venv: `python -m alembic`, а не просто `alembic`.
-
-### 4. Auth
+## Auth
 
 | Method | Path | Кто |
 |--------|------|-----|
-| `POST` | `/auth/register` | новый client (`email`, `full_name`, `password`) |
+| `POST` | `/auth/register` | client |
 | `POST` | `/auth/login` | client / agent / admin |
-| `GET` | `/auth/me` | любой авторизованный пользователь (`Bearer` token) |
+| `GET` | `/auth/me` | любой с JWT |
 
-**Staff по умолчанию** (создаётся при старте API, если записи с таким email ещё нет):
+Staff (сиды при старте API):
 
 | Role | Email | Password |
 |------|--------|----------|
 | admin | `root@gmail.com` | `root` |
 | agent | `agent_1@gmail.com` | `agent_1` |
 
-Сменить можно в `.env` (`SEED_ADMIN_*`, `SEED_AGENT_*`).
-
-Пример тела для `POST /auth/register`:
-
-```json
-{
-  "email": "client@example.com",
-  "full_name": "Иван Иванов",
-  "password": "ClientPass123"
-}
-```
-
-Для защищённых эндпоинтов:
-
-```http
-Authorization: Bearer <access_token>
-```
-
-### Страницы UI
-
-| URL | Страница |
-|-----|----------|
-| `/` | редирект → `/login` |
-| `/login` | форма входа |
-| `/register` | регистрация client |
-| `/tickets` | «Мои тикеты» + модалка «Новый тикет» (client) |
-| `/home` | заглушка (agent / admin) |
-
-После `python start_project.py` откройте: http://127.0.0.1:8000/login  
-Клиент после входа/регистрации попадает на `/tickets`.
-
-### Тикеты (v.0.5.0)
+## Тикеты (API)
 
 | Method | Path | Кто |
 |--------|------|-----|
-| `GET` | `/tickets/problem-reasons` | список причин для select |
-| `POST` | `/tickets` | client создаёт тикет (`multipart`: `problem_reason`, `description`, optional `photos`) |
+| `GET` | `/tickets/problem-reasons` | причины |
+| `POST` | `/tickets` | client создаёт тикет |
 | `GET` | `/tickets/my` | client — свои тикеты |
-| `GET` | `/tickets/{id}` | client (свои) / agent / admin |
+| `GET` | `/tickets/{id}` | detail |
+| `GET` | `/tickets/{id}/attachments/{aid}/file` | фото |
 
-Статус нового тикета: `in_queue`. Фото — до 5 шт., папка `uploads/` (не в git).
+## UI (Next.js)
 
-### 5. Тесты
+| URL | Страница |
+|-----|----------|
+| `/login` | вход |
+| `/register` | регистрация client |
+| `/tickets` | «Мои тикеты» + модалки |
+| `/home` | заглушка agent/admin |
+
+Клиент после входа попадает на `/tickets`.
+
+## Тесты backend
 
 ```powershell
+.\.venv\Scripts\Activate.ps1
 pytest
 ```
 
-### Полный стек в Docker
-
-```powershell
-docker compose up --build
-```
-
-API будет на http://127.0.0.1:8000 (настройки из `.env.example`, если не переопределены).
-
 ## Версионирование
 
-Коммиты в формате `v.x.x.x` (major.minor.patch).
+Коммиты: `v.x.x.x` (major.minor.patch).
 
 ## Заметки
 
-- Локальное ТЗ `input.md` **не** коммитится (см. `.gitignore`).
-- Секреты хранятся в `.env` (не в git). Образец — `.env.example`.
-- Локальный файл SQLite `ticket_system_local.db` тоже не в git.
+- `input.md` не в git
+- Секреты в `.env` / `frontend/.env.local`
+- SQLite `ticket_system_local.db` и `uploads/` не в git
+- Старый vanilla HTML/CSS/JS удалён — UI только в `frontend/`

@@ -48,3 +48,9 @@ ticket_system_postgres_data/
 
 # Uploaded ticket photos
 uploads/
+
+# Next.js frontend
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env.local

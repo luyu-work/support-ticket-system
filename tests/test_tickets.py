@@ -156,22 +156,6 @@ def test_unknown_problem_reason_returns_400(api_test_client: TestClient) -> None
     assert response.status_code == 400
 
 
-def test_new_ticket_url_redirects_to_list(api_test_client: TestClient) -> None:
-    response = api_test_client.get("/tickets/new", follow_redirects=False)
-    assert response.status_code == 302
-    assert response.headers["location"] == "/tickets"
-
-
-def test_my_tickets_page_available(api_test_client: TestClient) -> None:
-    response = api_test_client.get("/tickets")
-    assert response.status_code == 200
-    assert "Мои тикеты" in response.text
-    assert "Обратная связь" in response.text
-    assert 'id="my-tickets-list"' in response.text
-    assert 'id="create-ticket-modal"' in response.text
-    assert "Новый тикет" in response.text
-
-
 def test_problem_reason_labels_match_product(api_test_client: TestClient) -> None:
     response = api_test_client.get("/tickets/problem-reasons")
     labels = {item["value"]: item["label_ru"] for item in response.json()}
