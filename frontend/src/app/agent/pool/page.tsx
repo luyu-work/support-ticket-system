@@ -51,7 +51,11 @@ export default function AgentPoolPage() {
       router.replace("/login");
       return;
     }
-    if (account.role !== "agent" && account.role !== "admin") {
+    if (account.role === "admin") {
+      router.replace("/agent/agents");
+      return;
+    }
+    if (account.role !== "agent") {
       router.replace(account.role === "client" ? "/tickets" : "/home");
       return;
     }

@@ -32,6 +32,10 @@ def seed_default_staff_accounts(
         full_name=application_settings.seed_agent_full_name,
         plain_password=application_settings.seed_agent_password,
         role=UserRole.AGENT,
+        agent_number=1,
+        work_days="[0,1,2,3,4]",
+        work_time_start="09:00",
+        work_time_end="18:00",
     )
 
     logger.info(

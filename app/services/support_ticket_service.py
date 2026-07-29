@@ -293,8 +293,14 @@ def claim_ticket_from_pool(
     return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
 
 
-def format_agent_badge(user_account_id: int) -> str:
-    return f"Агент #{user_account_id:03d}"
+def format_agent_badge(
+    user_account_id: int,
+    *,
+    agent_number: int | None = None,
+) -> str:
+    """Display badge: prefer admin-assigned agent_number, else account id."""
+    number = agent_number if agent_number is not None else user_account_id
+    return f"Агент #{int(number):03d}"
 
 
 def _assert_agent_owns_ticket(ticket: SupportTicket, agent_account: UserAccount) -> None:

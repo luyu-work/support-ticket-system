@@ -93,3 +93,42 @@ export interface ProblemReasonOption {
   value: string;
   label_ru: string;
 }
+
+export interface AgentAdmin {
+  user_account_id: number;
+  email: string;
+  full_name: string;
+  agent_number: number | null;
+  agent_badge: string;
+  is_active: boolean;
+  is_online: boolean;
+  work_days: number[];
+  work_days_label: string;
+  work_time_start: string | null;
+  work_time_end: string | null;
+  work_time_label: string;
+  created_at: string;
+}
+
+export interface AgentListResponse {
+  items: AgentAdmin[];
+  total_count: number;
+}
+
+export interface AgentCreatePayload {
+  full_name: string;
+  agent_number: number;
+  password: string;
+  work_days: number[];
+  work_time_start: string;
+  work_time_end: string;
+}
+
+export interface AgentUpdatePayload {
+  full_name?: string;
+  agent_number?: number;
+  password?: string;
+  work_days?: number[];
+  work_time_start?: string;
+  work_time_end?: string;
+}

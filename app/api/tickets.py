@@ -141,7 +141,10 @@ def _tickets_to_pool_items(tickets: list) -> list[PoolTicketItem]:
             assignee = PoolTicketAssignee(
                 user_account_id=agent.user_account_id,
                 full_name=agent.full_name,
-                agent_badge=format_agent_badge(agent.user_account_id),
+                agent_badge=format_agent_badge(
+                    agent.user_account_id,
+                    agent_number=agent.agent_number,
+                ),
             )
         items.append(
             PoolTicketItem(

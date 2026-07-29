@@ -1,5 +1,9 @@
 import type {
   AccessTokenResponse,
+  AgentAdmin,
+  AgentCreatePayload,
+  AgentListResponse,
+  AgentUpdatePayload,
   ProblemReasonOption,
   SupportTicket,
   SupportTicketListResponse,
@@ -7,7 +11,7 @@ import type {
   TicketStatus,
   UserAccount,
 } from "@/types/api";
-import { getAccessToken } from "@/lib/auth-storage";
+import { clearAuthSession, getAccessToken } from "@/lib/auth-storage";
 
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") || "http://127.0.0.1:8000";
@@ -98,6 +102,47 @@ export async function registerClient(
 
 export async function fetchMyUserAccount(): Promise<UserAccount> {
   return apiFetch<UserAccount>("/auth/me", {}, true);
+}
+
+export async function logoutUser(): Promise<void> {
+  try {
+    await apiFetch<UserAccount>("/auth/logout", { method: "POST" }, true);
+  } catch {
+    /* still clear local session */
+  }
+}
+
+/** Mark agent offline on server, then wipe local JWT. */
+export async function logoutAndClearSession(): Promise<void> {
+  await logoutUser();
+  clearAuthSession();
+}
+
+export async function fetchAdminAgents(): Promise<AgentListResponse> {
+  return apiFetch<AgentListResponse>("/admin/agents", {}, true);
+}
+
+export async function createAgent(payload: AgentCreatePayload): Promise<AgentAdmin> {
+  return apiFetch<AgentAdmin>(
+    "/admin/agents",
+    { method: "POST", body: JSON.stringify(payload) },
+    true,
+  );
+}
+
+export async function updateAgent(
+  userAccountId: number,
+  payload: AgentUpdatePayload,
+): Promise<AgentAdmin> {
+  return apiFetch<AgentAdmin>(
+    `/admin/agents/${userAccountId}`,
+    { method: "PATCH", body: JSON.stringify(payload) },
+    true,
+  );
+}
+
+export async function deleteAgent(userAccountId: number): Promise<void> {
+  await apiFetch<void>(`/admin/agents/${userAccountId}`, { method: "DELETE" }, true);
 }
 
 export async function fetchProblemReasons(): Promise<ProblemReasonOption[]> {

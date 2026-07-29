@@ -1,7 +1,7 @@
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
-from sqlalchemy import Boolean, DateTime, Enum, String, func
+from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import DatabaseModelBase
@@ -33,8 +33,21 @@ class UserAccount(DatabaseModelBase):
         index=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    # For admin MVP later: how many agents look "online"
+    # Agent presence for staff UIs
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+
+    # Agent-only fields (null for client/admin)
+    agent_number: Mapped[Optional[int]] = mapped_column(
+        Integer,
+        unique=True,
+        nullable=True,
+        index=True,
+    )
+    # JSON list of weekday indices: 0=Mon … 6=Sun, e.g. "[0,1,2,3,4]"
+    work_days: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    # "HH:MM" 24h local
+    work_time_start: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
+    work_time_end: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

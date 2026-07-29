@@ -3,13 +3,11 @@
 import { useRouter } from "next/navigation";
 import { ReactNode } from "react";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import {
-  clearAuthSession,
-  formatAgentBadge,
-} from "@/lib/auth-storage";
+import { logoutAndClearSession } from "@/lib/api";
+import { formatAgentBadge } from "@/lib/auth-storage";
 import type { UserAccount } from "@/types/api";
 
-export type AgentNavKey = "pool" | "archive";
+export type AgentNavKey = "agents" | "pool" | "archive";
 
 interface AgentStaffShellProps {
   user: UserAccount;
@@ -19,8 +17,10 @@ interface AgentStaffShellProps {
 
 export function AgentStaffShell({ user, activeNav, children }: AgentStaffShellProps) {
   const router = useRouter();
-  const roleLabel =
-    user.role === "admin" ? "Администратор" : formatAgentBadge(user.user_account_id);
+  const isAdmin = user.role === "admin";
+  const roleLabel = isAdmin
+    ? "Администратор"
+    : formatAgentBadge(user.user_account_id);
 
   return (
     <div className="agent-page">
@@ -30,23 +30,35 @@ export function AgentStaffShell({ user, activeNav, children }: AgentStaffShellPr
             <BrandLogo />
           </div>
           <div className="agent-nav-list">
-            <button
-              type="button"
-              className={`agent-nav-item${activeNav === "pool" ? " is-active" : ""}`}
-              onClick={() => router.push("/agent/pool")}
-            >
-              Пул тикетов
-            </button>
-            <button
-              type="button"
-              className={`agent-nav-item${activeNav === "archive" ? " is-active" : ""}`}
-              onClick={() => router.push("/agent/archive")}
-            >
-              Архив
-            </button>
-            <button type="button" className="agent-nav-item" disabled title="Скоро">
-              База знаний
-            </button>
+            {isAdmin ? (
+              <button
+                type="button"
+                className={`agent-nav-item${activeNav === "agents" ? " is-active" : ""}`}
+                onClick={() => router.push("/agent/agents")}
+              >
+                Агенты
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  className={`agent-nav-item${activeNav === "pool" ? " is-active" : ""}`}
+                  onClick={() => router.push("/agent/pool")}
+                >
+                  Пул тикетов
+                </button>
+                <button
+                  type="button"
+                  className={`agent-nav-item${activeNav === "archive" ? " is-active" : ""}`}
+                  onClick={() => router.push("/agent/archive")}
+                >
+                  Архив
+                </button>
+                <button type="button" className="agent-nav-item" disabled title="Скоро">
+                  База знаний
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -61,8 +73,7 @@ export function AgentStaffShell({ user, activeNav, children }: AgentStaffShellPr
             aria-label="Выйти"
             title="Выйти"
             onClick={() => {
-              clearAuthSession();
-              router.push("/login");
+              void logoutAndClearSession().then(() => router.push("/login"));
             }}
           >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>

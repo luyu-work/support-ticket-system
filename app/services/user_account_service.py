@@ -67,6 +67,19 @@ def register_client_account(
     return new_client
 
 
+def set_user_online_status(
+    database_session: Session,
+    *,
+    user_account: UserAccount,
+    is_online: bool,
+) -> UserAccount:
+    """Update presence flag (agents appear online for admin list)."""
+    user_account.is_online = is_online
+    database_session.commit()
+    database_session.refresh(user_account)
+    return user_account
+
+
 def authenticate_user_account(
     database_session: Session,
     *,
@@ -94,6 +107,10 @@ def ensure_staff_user_account(
     full_name: str,
     plain_password: str,
     role: UserRole,
+    agent_number: int | None = None,
+    work_days: str | None = None,
+    work_time_start: str | None = None,
+    work_time_end: str | None = None,
 ) -> UserAccount:
     """
     Create staff account if missing.
@@ -108,6 +125,15 @@ def ensure_staff_user_account(
         existing_account.hashed_password = hash_plain_password(plain_password)
         existing_account.role = role
         existing_account.is_active = True
+        if role == UserRole.AGENT:
+            if agent_number is not None:
+                existing_account.agent_number = agent_number
+            if work_days is not None:
+                existing_account.work_days = work_days
+            if work_time_start is not None:
+                existing_account.work_time_start = work_time_start
+            if work_time_end is not None:
+                existing_account.work_time_end = work_time_end
         database_session.commit()
         database_session.refresh(existing_account)
         return existing_account
@@ -119,6 +145,10 @@ def ensure_staff_user_account(
         role=role,
         is_active=True,
         is_online=False,
+        agent_number=agent_number if role == UserRole.AGENT else None,
+        work_days=work_days if role == UserRole.AGENT else None,
+        work_time_start=work_time_start if role == UserRole.AGENT else None,
+        work_time_end=work_time_end if role == UserRole.AGENT else None,
     )
     database_session.add(staff_account)
     database_session.commit()

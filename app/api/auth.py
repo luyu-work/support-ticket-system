@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentUserAccountDep, DatabaseSessionDep
 from app.core.security import create_access_token
+from app.models.enums import UserRole
 from app.schemas.auth import (
     AccessTokenResponse,
     ClientRegistrationRequest,
@@ -18,6 +19,7 @@ from app.services.user_account_service import (
     InvalidCredentialsError,
     authenticate_user_account,
     register_client_account,
+    set_user_online_status,
 )
 
 logger = logging.getLogger(__name__)
@@ -92,12 +94,40 @@ def login_user_account(
             detail="User account is inactive",
         ) from error
 
+    # Agents mark themselves online so admin dashboard can show presence
+    role_value = (
+        user_account.role.value
+        if hasattr(user_account.role, "value")
+        else str(user_account.role)
+    )
+    if role_value == UserRole.AGENT.value:
+        user_account = set_user_online_status(
+            database_session,
+            user_account=user_account,
+            is_online=True,
+        )
+
     logger.info(
         "User logged in | user_account_id=%s role=%s",
         user_account.user_account_id,
         user_account.role,
     )
     return _build_access_token_response(user_account)
+
+
+@auth_router.post("/logout", response_model=UserAccountResponse)
+def logout_user_account(
+    database_session: DatabaseSessionDep,
+    current_user_account: CurrentUserAccountDep,
+) -> UserAccountResponse:
+    """Clear online presence (agents) when leaving the app."""
+    updated = set_user_online_status(
+        database_session,
+        user_account=current_user_account,
+        is_online=False,
+    )
+    logger.info("User logged out | user_account_id=%s", updated.user_account_id)
+    return UserAccountResponse.model_validate(updated)
 
 
 @auth_router.get("/me", response_model=UserAccountResponse)

@@ -43,6 +43,31 @@ def create_database_tables_if_needed() -> None:
     import app.models  # noqa: F401
 
     DatabaseModelBase.metadata.create_all(bind=database_engine)
+    _sqlite_add_missing_agent_columns()
+
+
+def _sqlite_add_missing_agent_columns() -> None:
+    """create_all does not ALTER existing tables — add agent profile columns if missing."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(database_engine)
+    if "user_accounts" not in inspector.get_table_names():
+        return
+    existing = {column["name"] for column in inspector.get_columns("user_accounts")}
+    alters: list[str] = []
+    if "agent_number" not in existing:
+        alters.append("ALTER TABLE user_accounts ADD COLUMN agent_number INTEGER")
+    if "work_days" not in existing:
+        alters.append("ALTER TABLE user_accounts ADD COLUMN work_days TEXT")
+    if "work_time_start" not in existing:
+        alters.append("ALTER TABLE user_accounts ADD COLUMN work_time_start VARCHAR(5)")
+    if "work_time_end" not in existing:
+        alters.append("ALTER TABLE user_accounts ADD COLUMN work_time_end VARCHAR(5)")
+    if not alters:
+        return
+    with database_engine.begin() as connection:
+        for statement in alters:
+            connection.execute(text(statement))
 
 
 def get_database_session() -> Generator[Session, None, None]:

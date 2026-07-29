@@ -20,7 +20,11 @@ export default function HomePage() {
       router.replace("/tickets");
       return;
     }
-    if (account.role === "agent" || account.role === "admin") {
+    if (account.role === "admin") {
+      router.replace("/agent/agents");
+      return;
+    }
+    if (account.role === "agent") {
       router.replace("/agent/pool");
       return;
     }
