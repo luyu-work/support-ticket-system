@@ -37,16 +37,23 @@ function redirectAfterLogin(userAccount) {
   window.location.href = "/home";
 }
 
+function findSubmitButton(form) {
+  return (
+    document.querySelector(`button[type="submit"][form="${form.id}"]`) ||
+    form.querySelector('button[type="submit"]')
+  );
+}
+
 async function submitLoginForm(event) {
   event.preventDefault();
 
   const form = event.currentTarget;
   const messageElement = document.getElementById("auth-message");
-  const submitButton = form.querySelector('button[type="submit"]');
+  const submitButton = findSubmitButton(form);
   const email = form.email.value.trim();
   const password = form.password.value;
 
-  submitButton.disabled = true;
+  if (submitButton) submitButton.disabled = true;
   showFormMessage(messageElement, "Входим…", "");
 
   try {
@@ -69,7 +76,7 @@ async function submitLoginForm(event) {
   } catch {
     showFormMessage(messageElement, "Сервер недоступен. Запущен ли python start_project.py?", "error");
   } finally {
-    submitButton.disabled = false;
+    if (submitButton) submitButton.disabled = false;
   }
 }
 
@@ -78,12 +85,12 @@ async function submitRegisterForm(event) {
 
   const form = event.currentTarget;
   const messageElement = document.getElementById("auth-message");
-  const submitButton = form.querySelector('button[type="submit"]');
+  const submitButton = findSubmitButton(form);
   const email = form.email.value.trim();
   const fullName = form.full_name.value.trim();
   const password = form.password.value;
 
-  submitButton.disabled = true;
+  if (submitButton) submitButton.disabled = true;
   showFormMessage(messageElement, "Регистрируем…", "");
 
   try {
@@ -113,8 +120,27 @@ async function submitRegisterForm(event) {
   } catch {
     showFormMessage(messageElement, "Сервер недоступен. Запущен ли python start_project.py?", "error");
   } finally {
-    submitButton.disabled = false;
+    if (submitButton) submitButton.disabled = false;
   }
+}
+
+function initPasswordToggles() {
+  const toggleButtons = document.querySelectorAll("[data-password-toggle]");
+  toggleButtons.forEach((toggleButton) => {
+    toggleButton.addEventListener("click", () => {
+      const inputId = toggleButton.getAttribute("data-target");
+      const passwordInput = document.getElementById(inputId);
+      if (!passwordInput) {
+        return;
+      }
+      const showPassword = passwordInput.type === "password";
+      passwordInput.type = showPassword ? "text" : "password";
+      toggleButton.setAttribute(
+        "aria-label",
+        showPassword ? "Скрыть пароль" : "Показать пароль",
+      );
+    });
+  });
 }
 
 function initLoginPage() {
@@ -122,6 +148,7 @@ function initLoginPage() {
   if (form) {
     form.addEventListener("submit", submitLoginForm);
   }
+  initPasswordToggles();
 }
 
 function initRegisterPage() {
@@ -129,6 +156,7 @@ function initRegisterPage() {
   if (form) {
     form.addEventListener("submit", submitRegisterForm);
   }
+  initPasswordToggles();
 }
 
 function initHomePage() {
