@@ -168,7 +168,7 @@ def test_ticket_attachments_belong_to_ticket(database_session: Session) -> None:
     assert len(ticket.attachments) == 2
     file_names = {item.original_file_name for item in ticket.attachments}
     assert file_names == {"photo_1.jpg", "photo_2.jpg"}
-    assert MAX_ATTACHMENTS_PER_TICKET == 10
+    assert MAX_ATTACHMENTS_PER_TICKET == 5
 
 
 def test_filter_tickets_by_status_and_problem_reason(database_session: Session) -> None:

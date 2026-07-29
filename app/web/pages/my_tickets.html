@@ -99,16 +99,32 @@
 
         <form id="create-ticket-form" class="create-ticket-form" novalidate>
           <div class="field">
-            <label for="problem_reason" class="field-label">
+            <span class="field-label" id="problem-reason-label">
               Причина<span class="required-mark">*</span>
-            </label>
-            <div class="input-shell select-shell">
-              <select id="problem_reason" name="problem_reason" required>
-                <option value="" disabled selected>Выберите причину</option>
-              </select>
-              <svg class="select-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                <path d="M15.8333 7.5L10 13.3333L4.16666 7.5" stroke="#151515" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-              </svg>
+            </span>
+            <div class="custom-select" id="problem-reason-select" data-open="false">
+              <input type="hidden" id="problem_reason" name="problem_reason" value="" required />
+              <button
+                type="button"
+                class="input-shell custom-select-trigger"
+                id="problem-reason-trigger"
+                aria-haspopup="listbox"
+                aria-expanded="false"
+                aria-labelledby="problem-reason-label"
+              >
+                <span class="custom-select-value is-placeholder" id="problem-reason-value">
+                  Выберите причину
+                </span>
+                <svg class="select-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M15.8333 7.5L10 13.3333L4.16666 7.5" stroke="#151515" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              <div
+                class="custom-select-dropdown"
+                id="problem-reason-dropdown"
+                role="listbox"
+                hidden
+              ></div>
             </div>
           </div>
 
@@ -116,7 +132,7 @@
             <label for="description" class="field-label">
               Описание<span class="required-mark">*</span>
             </label>
-            <div class="input-shell textarea-shell">
+            <div class="textarea-shell description-field">
               <textarea
                 id="description"
                 name="description"
@@ -124,11 +140,22 @@
                 placeholder="Опишите, что произошло..."
                 required
               ></textarea>
+              <button
+                type="button"
+                class="textarea-resize-handle"
+                id="description-resize-handle"
+                aria-label="Изменить высоту поля описания"
+                title="Потяните, чтобы изменить высоту"
+              >
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M0.5 8.5L8.5 0.5M4.5 9.5L9.5 4.5" stroke="#151515" stroke-linecap="round"/>
+                </svg>
+              </button>
             </div>
           </div>
 
           <div class="field">
-            <div class="field-label">Фотографии (необязательно, до 10 шт.)</div>
+            <div class="field-label">Фотографии (необязательно, до 5 шт.)</div>
             <div id="photo-preview-list" class="photo-preview-list">
               <button type="button" id="add-photo-button" class="photo-add-tile" aria-label="Добавить фото">
                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

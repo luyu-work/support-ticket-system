@@ -9,13 +9,13 @@ from app.models.base import DatabaseModelBase
 if TYPE_CHECKING:
     from app.models.support_ticket import SupportTicket
 
-# Business rule (enforced in services later, not only in DB): max 10 photos per ticket
-MAX_ATTACHMENTS_PER_TICKET = 10
+# Business rule (enforced in services, not only in DB): max 5 photos per ticket
+MAX_ATTACHMENTS_PER_TICKET = 5
 
 
 class TicketAttachment(DatabaseModelBase):
     """
-    One photo/file attached to a ticket (optional, up to 10 per ticket).
+    One photo/file attached to a ticket (optional, up to 5 per ticket).
     Table name: ticket_attachments
     """
 

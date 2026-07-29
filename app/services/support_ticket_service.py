@@ -38,7 +38,7 @@ def create_support_ticket_for_client(
     photo_files: list[UploadFile] | None = None,
     settings: ApplicationSettings | None = None,
 ) -> SupportTicket:
-    """Client creates a ticket in queue; optional photos (max 10)."""
+    """Client creates a ticket in queue; optional photos (max 5)."""
     application_settings = settings or get_application_settings()
     normalized_reason = problem_reason.strip()
     valid_reasons = {reason.value for reason in TicketProblemReason}

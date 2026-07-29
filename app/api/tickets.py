@@ -66,7 +66,7 @@ async def create_support_ticket(
     except TooManyTicketPhotosError as error:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Maximum 10 photos allowed, got {error.photo_count}",
+            detail=f"Maximum 5 photos allowed, got {error.photo_count}",
         ) from error
     except InvalidTicketPhotoError as error:
         raise HTTPException(

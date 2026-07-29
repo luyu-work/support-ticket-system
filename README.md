@@ -35,7 +35,7 @@ start_project.py       # локальный запуск API
 | `UserAccount` | `user_accounts` | client / agent / admin |
 | `SupportTicket` | `support_tickets` | тикет, статус, причина |
 | `TicketComment` | `ticket_comments` | комментарии к тикету |
-| `TicketAttachment` | `ticket_attachments` | фото (до 10 на тикет — в логике приложения) |
+| `TicketAttachment` | `ticket_attachments` | фото (до 5 на тикет — в логике приложения) |
 
 ## Быстрый старт (Windows PowerShell)
 
@@ -141,7 +141,7 @@ Authorization: Bearer <access_token>
 | `GET` | `/tickets/my` | client — свои тикеты |
 | `GET` | `/tickets/{id}` | client (свои) / agent / admin |
 
-Статус нового тикета: `in_queue`. Фото — до 10 шт., папка `uploads/` (не в git).
+Статус нового тикета: `in_queue`. Фото — до 5 шт., папка `uploads/` (не в git).
 
 ### 5. Тесты
 

@@ -16,11 +16,12 @@ const PROBLEM_REASON_LABELS_RU = {
   other: "Другое",
 };
 
-const MAX_TICKET_PHOTOS = 10;
+const MAX_TICKET_PHOTOS = 5;
 
 /** @type {File[]} */
 let selectedTicketPhotos = [];
 let problemReasonsLoaded = false;
+let problemReasonOptions = [];
 
 function escapeHtml(text) {
   return String(text)
@@ -143,16 +144,50 @@ function closeTicketDetailModal() {
 
 /* ----- Create ticket modal ----- */
 
+function updateCreateTicketFormScrollState() {
+  const form = document.getElementById("create-ticket-form");
+  const dialog = document.querySelector("#create-ticket-modal .ticket-modal-dialog");
+  if (!form || !dialog) return;
+
+  requestAnimationFrame(() => {
+    const dialogMaxPx = parseFloat(window.getComputedStyle(dialog).maxHeight);
+    const header = dialog.querySelector(".ticket-modal-header");
+    const headerHeight = header ? header.getBoundingClientRect().height : 0;
+    const availableForForm = dialogMaxPx - headerHeight;
+
+    if (!Number.isFinite(availableForForm) || availableForForm <= 0) {
+      form.classList.remove("is-scrollable");
+      form.style.maxHeight = "";
+      return;
+    }
+
+    form.style.maxHeight = `${availableForForm}px`;
+
+    // Measure without toggling overflow first (avoids default-bar flash)
+    const contentHeight = form.scrollHeight;
+    const needsScroll = contentHeight > availableForForm + 2;
+
+    if (needsScroll) {
+      form.classList.add("is-scrollable");
+    } else {
+      form.classList.remove("is-scrollable");
+      form.scrollTop = 0;
+    }
+  });
+}
+
 function openCreateTicketModal() {
   const modal = document.getElementById("create-ticket-modal");
   if (!modal) return;
   modal.hidden = false;
   document.body.classList.add("modal-open");
   loadProblemReasonsIntoSelect();
+  updateCreateTicketFormScrollState();
 }
 
 function closeCreateTicketModal() {
   const modal = document.getElementById("create-ticket-modal");
+  closeCustomProblemReasonSelect();
   if (modal) modal.hidden = true;
   resetCreateTicketForm();
   if (!isAnyModalOpen()) {
@@ -174,6 +209,11 @@ function resetCreateTicketForm() {
   if (form) form.reset();
   selectedTicketPhotos = [];
   renderPhotoPreviews();
+  resetCustomProblemReasonSelect();
+  const descriptionField = document.getElementById("description");
+  if (descriptionField) {
+    descriptionField.style.height = "120px";
+  }
   const messageElement = document.getElementById("create-ticket-message");
   if (messageElement) {
     messageElement.textContent = "";
@@ -181,26 +221,129 @@ function resetCreateTicketForm() {
   }
 }
 
+function resetCustomProblemReasonSelect() {
+  const hiddenInput = document.getElementById("problem_reason");
+  const valueLabel = document.getElementById("problem-reason-value");
+  const selectRoot = document.getElementById("problem-reason-select");
+  if (hiddenInput) hiddenInput.value = "";
+  if (valueLabel) {
+    valueLabel.textContent = "Выберите причину";
+    valueLabel.classList.add("is-placeholder");
+  }
+  closeCustomProblemReasonSelect();
+  if (selectRoot) {
+    selectRoot.querySelectorAll(".custom-select-option").forEach((option) => {
+      option.classList.remove("is-selected");
+    });
+  }
+}
+
+function openCustomProblemReasonSelect() {
+  const selectRoot = document.getElementById("problem-reason-select");
+  const dropdown = document.getElementById("problem-reason-dropdown");
+  const trigger = document.getElementById("problem-reason-trigger");
+  if (!selectRoot || !dropdown || !trigger) return;
+
+  selectRoot.dataset.open = "true";
+  dropdown.hidden = false;
+  trigger.setAttribute("aria-expanded", "true");
+}
+
+function closeCustomProblemReasonSelect() {
+  const selectRoot = document.getElementById("problem-reason-select");
+  const dropdown = document.getElementById("problem-reason-dropdown");
+  const trigger = document.getElementById("problem-reason-trigger");
+  if (!selectRoot || !dropdown || !trigger) return;
+
+  selectRoot.dataset.open = "false";
+  dropdown.hidden = true;
+  trigger.setAttribute("aria-expanded", "false");
+}
+
+function toggleCustomProblemReasonSelect() {
+  const selectRoot = document.getElementById("problem-reason-select");
+  if (!selectRoot) return;
+  if (selectRoot.dataset.open === "true") {
+    closeCustomProblemReasonSelect();
+  } else {
+    openCustomProblemReasonSelect();
+  }
+}
+
+function selectProblemReason(value, label) {
+  const hiddenInput = document.getElementById("problem_reason");
+  const valueLabel = document.getElementById("problem-reason-value");
+  const selectRoot = document.getElementById("problem-reason-select");
+
+  if (hiddenInput) hiddenInput.value = value;
+  if (valueLabel) {
+    valueLabel.textContent = label;
+    valueLabel.classList.remove("is-placeholder");
+  }
+  if (selectRoot) {
+    selectRoot.querySelectorAll(".custom-select-option").forEach((option) => {
+      option.classList.toggle("is-selected", option.dataset.value === value);
+    });
+  }
+  closeCustomProblemReasonSelect();
+}
+
+function renderProblemReasonOptions(reasons) {
+  const dropdown = document.getElementById("problem-reason-dropdown");
+  if (!dropdown) return;
+
+  dropdown.innerHTML = reasons
+    .map(
+      (reason) => `
+      <button
+        type="button"
+        class="custom-select-option"
+        role="option"
+        data-value="${escapeHtml(reason.value)}"
+      >
+        ${escapeHtml(reason.label_ru)}
+      </button>
+    `,
+    )
+    .join("");
+
+  dropdown.querySelectorAll(".custom-select-option").forEach((optionButton) => {
+    optionButton.addEventListener("click", () => {
+      selectProblemReason(optionButton.dataset.value, optionButton.textContent.trim());
+    });
+  });
+}
+
 async function loadProblemReasonsIntoSelect() {
   if (problemReasonsLoaded) return;
-  const selectElement = document.getElementById("problem_reason");
-  if (!selectElement) return;
 
   try {
     const response = await fetch("/tickets/problem-reasons");
     if (!response.ok) throw new Error("load failed");
-    const reasons = await response.json();
-    reasons.forEach((reason) => {
-      const option = document.createElement("option");
-      option.value = reason.value;
-      option.textContent = reason.label_ru;
-      selectElement.appendChild(option);
-    });
+    problemReasonOptions = await response.json();
+    renderProblemReasonOptions(problemReasonOptions);
     problemReasonsLoaded = true;
   } catch {
     const messageElement = document.getElementById("create-ticket-message");
     showFormMessage(messageElement, "Не удалось загрузить причины", "error");
   }
+}
+
+function initCustomProblemReasonSelect() {
+  const trigger = document.getElementById("problem-reason-trigger");
+  const selectRoot = document.getElementById("problem-reason-select");
+  if (!trigger || !selectRoot) return;
+
+  trigger.addEventListener("click", (event) => {
+    event.preventDefault();
+    toggleCustomProblemReasonSelect();
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!selectRoot.contains(event.target)) {
+      closeCustomProblemReasonSelect();
+    }
+  });
 }
 
 function renderPhotoPreviews() {
@@ -230,7 +373,56 @@ function renderPhotoPreviews() {
     });
   });
 
-  addButton.hidden = selectedTicketPhotos.length >= MAX_TICKET_PHOTOS;
+  // At 5 photos hide "+"; display:flex on the button would override [hidden] without CSS fix
+  const isFull = selectedTicketPhotos.length >= MAX_TICKET_PHOTOS;
+  addButton.hidden = isFull;
+  addButton.setAttribute("aria-hidden", isFull ? "true" : "false");
+  updateCreateTicketFormScrollState();
+}
+
+function initDescriptionResizeHandle() {
+  const textarea = document.getElementById("description");
+  const handle = document.getElementById("description-resize-handle");
+  if (!textarea || !handle) return;
+
+  const minHeight = 120;
+  const maxHeight = 193;
+
+  let isDragging = false;
+  let startY = 0;
+  let startHeight = 0;
+
+  const onPointerMove = (event) => {
+    if (!isDragging) return;
+    const deltaY = event.clientY - startY;
+    let nextHeight = startHeight + deltaY;
+    nextHeight = Math.max(minHeight, Math.min(maxHeight, nextHeight));
+    textarea.style.height = `${nextHeight}px`;
+    updateCreateTicketFormScrollState();
+  };
+
+  const onPointerUp = () => {
+    if (!isDragging) return;
+    isDragging = false;
+    handle.classList.remove("is-dragging");
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+    window.removeEventListener("pointermove", onPointerMove);
+    window.removeEventListener("pointerup", onPointerUp);
+    updateCreateTicketFormScrollState();
+  };
+
+  handle.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    isDragging = true;
+    startY = event.clientY;
+    startHeight = textarea.getBoundingClientRect().height;
+    handle.classList.add("is-dragging");
+    document.body.style.cursor = "ns-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", onPointerMove);
+    window.addEventListener("pointerup", onPointerUp);
+  });
 }
 
 function initPhotoPicker() {
@@ -257,7 +449,8 @@ async function submitCreateTicketForm(event) {
   const submitButton = form.querySelector('button[type="submit"]');
   const accessToken = getAccessToken();
 
-  const problemReason = form.problem_reason.value;
+  const problemReasonInput = document.getElementById("problem_reason");
+  const problemReason = problemReasonInput ? problemReasonInput.value : "";
   const description = form.description.value.trim();
 
   if (!problemReason) {
@@ -319,10 +512,18 @@ function initCreateTicketModal() {
   }
 
   initPhotoPicker();
+  initDescriptionResizeHandle();
+  initCustomProblemReasonSelect();
 
   if (form) {
     form.addEventListener("submit", submitCreateTicketForm);
   }
+
+  window.addEventListener("resize", () => {
+    if (createModal && !createModal.hidden) {
+      updateCreateTicketFormScrollState();
+    }
+  });
 }
 
 function initDetailModal() {
@@ -342,6 +543,11 @@ function initModalKeyboard() {
     const detailModal = document.getElementById("ticket-detail-modal");
 
     if (createModal && !createModal.hidden) {
+      const selectRoot = document.getElementById("problem-reason-select");
+      if (selectRoot && selectRoot.dataset.open === "true") {
+        closeCustomProblemReasonSelect();
+        return;
+      }
       closeCreateTicketModal();
       return;
     }
