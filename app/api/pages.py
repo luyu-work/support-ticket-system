@@ -7,12 +7,24 @@ from fastapi.responses import FileResponse, RedirectResponse
 
 WEB_ROOT = Path(__file__).resolve().parent.parent / "web"
 PAGES_DIRECTORY = WEB_ROOT / "pages"
+STATIC_DIRECTORY = WEB_ROOT / "static"
+FAVICON_PATH = STATIC_DIRECTORY / "favicon.svg"
 
 pages_router = APIRouter(tags=["pages"])
 
 
 def _page_file(page_file_name: str) -> FileResponse:
     return FileResponse(PAGES_DIRECTORY / page_file_name)
+
+
+@pages_router.get("/favicon.ico", include_in_schema=False)
+def open_favicon() -> FileResponse:
+    """Browsers request /favicon.ico by default — serve our logo SVG."""
+    return FileResponse(
+        FAVICON_PATH,
+        media_type="image/svg+xml",
+        headers={"Cache-Control": "public, max-age=86400"},
+    )
 
 
 @pages_router.get("/")
