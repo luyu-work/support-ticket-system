@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { AgentStaffShell } from "@/components/agent/AgentStaffShell";
 import { SortChevrons } from "@/components/agent/SortChevrons";
 import { TicketDetailModal } from "@/components/tickets/TicketDetailModal";
-import { ApiError, claimTicket, fetchTicketDetail, fetchTicketPool } from "@/lib/api";
+import { ApiError, fetchTicketArchive, fetchTicketDetail } from "@/lib/api";
 import {
   formatTicketCreatedAt,
   getAccessToken,
@@ -17,7 +17,7 @@ import type { PoolTicketItem, SupportTicket, UserAccount } from "@/types/api";
 type SortKey = "id" | "status" | "created_at" | "assignee";
 type SortDir = "asc" | "desc";
 
-export default function AgentPoolPage() {
+export default function AgentArchivePage() {
   const router = useRouter();
   const [user, setUser] = useState<UserAccount | null>(null);
   const [items, setItems] = useState<PoolTicketItem[]>([]);
@@ -25,19 +25,18 @@ export default function AgentPoolPage() {
   const [error, setError] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
   const [sortKey, setSortKey] = useState<SortKey>("id");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(null);
-  const [lockUntilResolved, setLockUntilResolved] = useState(false);
   const [actionMessage, setActionMessage] = useState("");
 
-  const loadPool = useCallback(async () => {
+  const loadArchive = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const payload = await fetchTicketPool();
+      const payload = await fetchTicketArchive();
       setItems(payload.items);
     } catch {
-      setError("Не удалось загрузить пул тикетов");
+      setError("Не удалось загрузить архив");
       setItems([]);
     } finally {
       setLoading(false);
@@ -59,8 +58,8 @@ export default function AgentPoolPage() {
   }, [router]);
 
   useEffect(() => {
-    if (user) void loadPool();
-  }, [user, loadPool]);
+    if (user) void loadArchive();
+  }, [user, loadArchive]);
 
   const sortedItems = useMemo(() => {
     const copy = [...items];
@@ -87,28 +86,14 @@ export default function AgentPoolPage() {
       setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortKey(key);
-      setSortDir("asc");
+      setSortDir("desc");
     }
   }
 
   async function openRow(item: PoolTicketItem) {
     setActionMessage("");
-    const needsResolution =
-      user?.role === "agent" &&
-      (item.status === "in_queue" || item.status === "important");
-
     try {
-      // Free agent claims unassigned pool tickets when opening them
-      if (
-        user?.role === "agent" &&
-        !item.assigned_agent &&
-        (item.status === "in_queue" || item.status === "important")
-      ) {
-        await claimTicket(item.support_ticket_id);
-        await loadPool();
-      }
       const detail = await fetchTicketDetail(item.support_ticket_id);
-      setLockUntilResolved(needsResolution);
       setSelectedTicket(detail);
     } catch (err) {
       setActionMessage(
@@ -120,10 +105,10 @@ export default function AgentPoolPage() {
   if (!user) return null;
 
   return (
-    <AgentStaffShell user={user} activeNav="pool">
+    <AgentStaffShell user={user} activeNav="archive">
       <section className="agent-main-card">
         <div className="agent-main-title">
-          <h1>Пул тикетов</h1>
+          <h1>Архив</h1>
           <div className="agent-filter-wrap">
             <button
               type="button"
@@ -155,7 +140,7 @@ export default function AgentPoolPage() {
           {loading && <p className="agent-empty">Загрузка…</p>}
           {!loading && error && <p className="agent-empty">{error}</p>}
           {!loading && !error && sortedItems.length === 0 && (
-            <p className="agent-empty">В пуле пока нет тикетов</p>
+            <p className="agent-empty">В архиве пока нет закрытых тикетов</p>
           )}
           {!loading && !error && sortedItems.length > 0 && (
             <table className="agent-table">
@@ -246,11 +231,7 @@ export default function AgentPoolPage() {
                         {getStatusLabel(item.status)}
                       </span>
                     </td>
-                    <td
-                      className={`agent-time-cell${
-                        item.status === "important" ? " is-important" : ""
-                      }`}
-                    >
+                    <td className="agent-time-cell">
                       {formatTicketCreatedAt(item.created_at)}
                     </td>
                     <td>{item.problem_reason_label}</td>
@@ -287,19 +268,9 @@ export default function AgentPoolPage() {
       <TicketDetailModal
         ticket={selectedTicket}
         open={Boolean(selectedTicket)}
-        lockUntilResolved={lockUntilResolved}
-        agentActions={user.role === "agent"}
+        agentActions={false}
         showTicketLogs
-        onResolved={() => {
-          setLockUntilResolved(false);
-          setSelectedTicket(null);
-          void loadPool();
-        }}
-        onClose={() => {
-          setSelectedTicket(null);
-          setLockUntilResolved(false);
-          void loadPool();
-        }}
+        onClose={() => setSelectedTicket(null)}
       />
     </AgentStaffShell>
   );

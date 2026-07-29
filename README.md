@@ -98,13 +98,19 @@ Staff (сиды при старте API):
 |--------|------|-----|
 | `GET` | `/tickets/problem-reasons` | причины |
 | `POST` | `/tickets` | client создаёт тикет |
-| `GET` | `/tickets/my` | client — свои тикеты |
+| `GET` | `/tickets/my` | client — все свои тикеты (без пагинации) |
 | `GET` | `/tickets/{id}` | detail |
 | `GET` | `/tickets/{id}/attachments/{aid}/file` | фото |
-| `GET` | `/tickets/pool` | общий пул (agent/admin) |
+| `GET` | `/tickets/pool` | общий пул (agent/admin), без закрытых |
+| `GET` | `/tickets/archive` | архив закрытых тикетов (agent/admin) |
 | `POST` | `/tickets/{id}/claim` | агент берёт тикет в работу |
+| `POST` | `/tickets/{id}/close` | агент закрывает с комментарием |
+| `POST` | `/tickets/{id}/transfer-to-engineers` | передать инженерам |
 
-Тикет в очереди дольше **8 часов** автоматически получает статус `important`.
+Тикет в очереди дольше **8 часов** автоматически получает статус `important`.  
+Закрытый тикет уходит из пула в **архив**.  
+У тикета ведётся **история** (создан / взят в работу / важное / закрыт / передан инженерам) — видят только agent/admin (кнопка «Логи» в модалке).  
+Комментарий агента при закрытии видит и клиент («Комментарий от тех. поддержки»).
 
 ## UI (Next.js)
 
@@ -113,10 +119,10 @@ Staff (сиды при старте API):
 | `/login` | вход |
 | `/register` | регистрация client |
 | `/tickets` | «Мои тикеты» (client) |
-| `/agent/pool` | общий пул тикетов (agent) |
-| `/home` | заглушка admin |
+| `/agent/pool` | общий пул тикетов (agent/admin) |
+| `/agent/archive` | архив закрытых (agent/admin) |
 
-Клиент → `/tickets`, агент → `/agent/pool`.  
+Клиент → `/tickets`, агент и админ → `/agent/pool`.  
 Пул общий: любой свободный агент открывает незанятый тикет и забирает его (`claim`).
 
 ## Тесты backend

@@ -77,6 +77,98 @@ def test_client_cannot_access_pool(api_test_client: TestClient) -> None:
     assert response.status_code == 403
 
 
+def test_closed_ticket_moves_to_archive(
+    api_test_client: TestClient,
+    database_session: Session,
+) -> None:
+    client_token = _register_client(api_test_client, "archive.client@example.com")
+    create = api_test_client.post(
+        "/tickets",
+        headers={"Authorization": f"Bearer {client_token}"},
+        data={"problem_reason": "other", "description": "will be archived"},
+    )
+    ticket_id = create.json()["support_ticket_id"]
+    agent_token = _agent_token(api_test_client, database_session)
+    headers = {"Authorization": f"Bearer {agent_token}"}
+
+    api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)
+    close = api_test_client.post(
+        f"/tickets/{ticket_id}/close",
+        headers=headers,
+        json={"comment_text": "Готово, в архив"},
+    )
+    assert close.status_code == 200
+
+    pool = api_test_client.get("/tickets/pool", headers=headers)
+    assert pool.status_code == 200
+    pool_ids = {item["support_ticket_id"] for item in pool.json()["items"]}
+    assert ticket_id not in pool_ids
+
+    archive = api_test_client.get("/tickets/archive", headers=headers)
+    assert archive.status_code == 200
+    archive_ids = {item["support_ticket_id"] for item in archive.json()["items"]}
+    assert ticket_id in archive_ids
+
+    # Client cannot open archive
+    client_archive = api_test_client.get(
+        "/tickets/archive",
+        headers={"Authorization": f"Bearer {client_token}"},
+    )
+    assert client_archive.status_code == 403
+
+
+def test_ticket_activity_log_and_agent_comment(
+    api_test_client: TestClient,
+    database_session: Session,
+) -> None:
+    client_token = _register_client(api_test_client, "log.client@example.com")
+    create = api_test_client.post(
+        "/tickets",
+        headers={"Authorization": f"Bearer {client_token}"},
+        data={"problem_reason": "bug_report", "description": "need history"},
+    )
+    ticket_id = create.json()["support_ticket_id"]
+    # Client-facing create response must not expose activity log
+    assert create.json().get("activity_log") == []
+
+    agent_token = _agent_token(api_test_client, database_session)
+    headers = {"Authorization": f"Bearer {agent_token}"}
+
+    claim = api_test_client.post(f"/tickets/{ticket_id}/claim", headers=headers)
+    assert claim.status_code == 200
+    claim_types = [event["event_type"] for event in claim.json()["activity_log"]]
+    assert "created" in claim_types
+    assert "claimed" in claim_types
+
+    close = api_test_client.post(
+        f"/tickets/{ticket_id}/close",
+        headers=headers,
+        json={"comment_text": "Исправлено на стороне поддержки"},
+    )
+    assert close.status_code == 200
+    body = close.json()
+    event_types = [event["event_type"] for event in body["activity_log"]]
+    assert event_types == ["created", "claimed", "closed"]
+    assert len(body["comments"]) == 1
+    assert body["comments"][0]["comment_text"] == "Исправлено на стороне поддержки"
+
+    detail = api_test_client.get(f"/tickets/{ticket_id}", headers=headers)
+    assert detail.status_code == 200
+    assert detail.json()["comments"][0]["comment_text"] == "Исправлено на стороне поддержки"
+    assert len(detail.json()["activity_log"]) == 3
+
+    # Client sees comment but not activity log
+    client_detail = api_test_client.get(
+        f"/tickets/{ticket_id}",
+        headers={"Authorization": f"Bearer {client_token}"},
+    )
+    assert client_detail.status_code == 200
+    client_body = client_detail.json()
+    assert len(client_body["comments"]) == 1
+    assert client_body["comments"][0]["comment_text"] == "Исправлено на стороне поддержки"
+    assert client_body["activity_log"] == []
+
+
 def test_agent_claims_ticket(
     api_test_client: TestClient,
     database_session: Session,
@@ -134,9 +226,28 @@ def test_agent_closes_and_transfers_ticket(
     )
     ticket_id2 = create2.json()["support_ticket_id"]
     api_test_client.post(f"/tickets/{ticket_id2}/claim", headers=headers)
-    close = api_test_client.post(f"/tickets/{ticket_id2}/close", headers=headers)
+    close = api_test_client.post(
+        f"/tickets/{ticket_id2}/close",
+        headers=headers,
+        json={"comment_text": "Проблема решена, клиенту ответили"},
+    )
     assert close.status_code == 200
     assert close.json()["status"] == "closed"
+
+    # Comment is required when closing
+    create3 = api_test_client.post(
+        "/tickets",
+        headers={"Authorization": f"Bearer {client_token}"},
+        data={"problem_reason": "other", "description": "need comment"},
+    )
+    ticket_id3 = create3.json()["support_ticket_id"]
+    api_test_client.post(f"/tickets/{ticket_id3}/claim", headers=headers)
+    close_no_comment = api_test_client.post(
+        f"/tickets/{ticket_id3}/close",
+        headers=headers,
+        json={"comment_text": "   "},
+    )
+    assert close_no_comment.status_code in {403, 422}
 
 
 def test_stale_queue_becomes_important(database_session: Session) -> None:

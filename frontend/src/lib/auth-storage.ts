@@ -31,7 +31,10 @@ export function getStoredUserAccount(): UserAccount | null {
 
 export function getPostLoginPath(userAccount: UserAccount): string {
   if (userAccount.role === "client") return "/tickets";
-  if (userAccount.role === "agent") return "/agent/pool";
+  // Agent and admin share pool + archive UI
+  if (userAccount.role === "agent" || userAccount.role === "admin") {
+    return "/agent/pool";
+  }
   return "/home";
 }
 

@@ -30,6 +30,24 @@ export interface TicketAttachment {
   uploaded_at: string;
 }
 
+export interface TicketComment {
+  ticket_comment_id: number;
+  comment_text: string;
+  author_user_id: number;
+  author_full_name: string | null;
+  created_at: string;
+}
+
+export interface TicketActivityEvent {
+  ticket_activity_id: number;
+  event_type: string;
+  event_label_ru: string;
+  actor_user_id: number | null;
+  actor_full_name: string | null;
+  details: string | null;
+  created_at: string;
+}
+
 export interface SupportTicket {
   support_ticket_id: number;
   title: string;
@@ -42,13 +60,13 @@ export interface SupportTicket {
   client_author_id: number;
   assigned_agent_id: number | null;
   attachments: TicketAttachment[];
+  comments?: TicketComment[];
+  activity_log?: TicketActivityEvent[];
 }
 
 export interface SupportTicketListResponse {
   items: SupportTicket[];
   total_ticket_count: number;
-  page_number: number;
-  page_size: number;
 }
 
 export interface PoolTicketAssignee {

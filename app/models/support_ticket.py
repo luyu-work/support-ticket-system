@@ -8,6 +8,7 @@ from app.models.base import DatabaseModelBase
 from app.models.enums import TicketStatus
 
 if TYPE_CHECKING:
+    from app.models.ticket_activity import TicketActivity
     from app.models.ticket_attachment import TicketAttachment
     from app.models.ticket_comment import TicketComment
     from app.models.user_account import UserAccount
@@ -74,6 +75,11 @@ class SupportTicket(DatabaseModelBase):
     comments: Mapped[list["TicketComment"]] = relationship(
         back_populates="support_ticket",
         cascade="all, delete-orphan",
+    )
+    activity_events: Mapped[list["TicketActivity"]] = relationship(
+        back_populates="support_ticket",
+        cascade="all, delete-orphan",
+        order_by="TicketActivity.created_at",
     )
     attachments: Mapped[list["TicketAttachment"]] = relationship(
         back_populates="support_ticket",

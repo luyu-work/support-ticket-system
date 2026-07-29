@@ -18,6 +18,7 @@ from app.api.deps import (
 from app.models import TicketAttachment
 from app.schemas.tickets import (
     PROBLEM_REASON_LABELS_RU,
+    CloseTicketRequest,
     PoolTicketAssignee,
     PoolTicketItem,
     SupportTicketListResponse,
@@ -25,6 +26,7 @@ from app.schemas.tickets import (
     TicketPoolListResponse,
     TicketProblemReasonOption,
     list_problem_reason_options,
+    to_support_ticket_response,
 )
 from app.services.support_ticket_service import (
     InvalidTicketPhotoError,
@@ -38,6 +40,7 @@ from app.services.support_ticket_service import (
     create_support_ticket_for_client,
     format_agent_badge,
     get_support_ticket_by_id,
+    list_archived_tickets,
     list_common_ticket_pool,
     list_tickets_for_client,
     transfer_ticket_to_engineers_by_agent,
@@ -107,45 +110,29 @@ async def create_support_ticket(
         new_ticket.support_ticket_id,
         client_account.user_account_id,
     )
-    return SupportTicketResponse.model_validate(new_ticket)
+    return to_support_ticket_response(new_ticket, include_activity_log=False)
 
 
 @tickets_router.get("/my", response_model=SupportTicketListResponse)
 def list_my_support_tickets(
     database_session: DatabaseSessionDep,
     client_account: ClientAccountDep,
-    page_number: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
 ) -> SupportTicketListResponse:
-    """List tickets created by the current client."""
+    """List all tickets created by the current client (no pagination)."""
     tickets, total_ticket_count = list_tickets_for_client(
         database_session,
         client_account=client_account,
-        page_number=page_number,
-        page_size=page_size,
     )
     return SupportTicketListResponse(
-        items=[SupportTicketResponse.model_validate(ticket) for ticket in tickets],
+        items=[
+            to_support_ticket_response(ticket, include_activity_log=False)
+            for ticket in tickets
+        ],
         total_ticket_count=total_ticket_count,
-        page_number=page_number,
-        page_size=page_size,
     )
 
 
-@tickets_router.get("/pool", response_model=TicketPoolListResponse)
-def list_ticket_pool(
-    database_session: DatabaseSessionDep,
-    _staff_account: StaffAccountDep,
-    status: str | None = Query(
-        None,
-        description="Optional filter: in_queue | important | in_progress | transferred_to_engineers",
-    ),
-) -> TicketPoolListResponse:
-    """
-    Common ticket pool for agents (and admins).
-    Any free agent can claim an unassigned ticket from this list.
-    """
-    tickets = list_common_ticket_pool(database_session, status_filter=status)
+def _tickets_to_pool_items(tickets: list) -> list[PoolTicketItem]:
     items: list[PoolTicketItem] = []
     for ticket in tickets:
         assignee = None
@@ -169,6 +156,38 @@ def list_ticket_pool(
                 assigned_agent=assignee,
             )
         )
+    return items
+
+
+@tickets_router.get("/pool", response_model=TicketPoolListResponse)
+def list_ticket_pool(
+    database_session: DatabaseSessionDep,
+    _staff_account: StaffAccountDep,
+    status: str | None = Query(
+        None,
+        description="Optional filter: in_queue | important | in_progress | transferred_to_engineers",
+    ),
+) -> TicketPoolListResponse:
+    """
+    Common ticket pool for agents (and admins).
+    Any free agent can claim an unassigned ticket from this list.
+    Closed tickets live in /tickets/archive.
+    """
+    tickets = list_common_ticket_pool(database_session, status_filter=status)
+    items = _tickets_to_pool_items(tickets)
+    return TicketPoolListResponse(items=items, total_ticket_count=len(items))
+
+
+@tickets_router.get("/archive", response_model=TicketPoolListResponse)
+def list_ticket_archive(
+    database_session: DatabaseSessionDep,
+    _staff_account: StaffAccountDep,
+) -> TicketPoolListResponse:
+    """
+    Archive of closed tickets for agents and admins (read-only list).
+    """
+    tickets = list_archived_tickets(database_session)
+    items = _tickets_to_pool_items(tickets)
     return TicketPoolListResponse(items=items, total_ticket_count=len(items))
 
 
@@ -204,7 +223,7 @@ def claim_support_ticket(
         support_ticket_id,
         agent_account.user_account_id,
     )
-    return SupportTicketResponse.model_validate(ticket)
+    return to_support_ticket_response(ticket)
 
 
 @tickets_router.post(
@@ -213,15 +232,17 @@ def claim_support_ticket(
 )
 def close_support_ticket(
     support_ticket_id: int,
+    body: CloseTicketRequest,
     database_session: DatabaseSessionDep,
     agent_account: AgentAccountDep,
 ) -> SupportTicketResponse:
-    """Agent closes a ticket they own."""
+    """Agent closes a ticket they own and leaves an outcome comment."""
     try:
         ticket = close_ticket_by_agent(
             database_session,
             support_ticket_id=support_ticket_id,
             agent_account=agent_account,
+            comment_text=body.comment_text,
         )
     except TicketNotAvailableForClaimError as error:
         raise HTTPException(
@@ -233,7 +254,7 @@ def close_support_ticket(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot close this ticket",
         ) from error
-    return SupportTicketResponse.model_validate(ticket)
+    return to_support_ticket_response(ticket)
 
 
 @tickets_router.post(
@@ -262,7 +283,7 @@ def transfer_support_ticket_to_engineers(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot transfer this ticket",
         ) from error
-    return SupportTicketResponse.model_validate(ticket)
+    return to_support_ticket_response(ticket)
 
 
 def _assert_user_can_view_ticket(current_user_account, ticket) -> None:
@@ -290,7 +311,14 @@ def get_support_ticket_detail(
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
     _assert_user_can_view_ticket(current_user_account, ticket)
-    return SupportTicketResponse.model_validate(ticket)
+    role_value = (
+        current_user_account.role.value
+        if hasattr(current_user_account.role, "value")
+        else str(current_user_account.role)
+    )
+    # Activity log is staff-only; clients still receive agent comments
+    is_staff = role_value in {"agent", "admin"}
+    return to_support_ticket_response(ticket, include_activity_log=is_staff)
 
 
 @tickets_router.get(

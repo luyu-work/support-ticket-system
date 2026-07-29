@@ -105,7 +105,7 @@ export async function fetchProblemReasons(): Promise<ProblemReasonOption[]> {
 }
 
 export async function fetchMyTickets(): Promise<SupportTicketListResponse> {
-  return apiFetch<SupportTicketListResponse>("/tickets/my?page_size=100", {}, true);
+  return apiFetch<SupportTicketListResponse>("/tickets/my", {}, true);
 }
 
 export async function fetchTicketDetail(ticketId: number): Promise<SupportTicket> {
@@ -155,12 +155,26 @@ export async function fetchTicketPool(
   return apiFetch<TicketPoolListResponse>(`/tickets/pool${query}`, {}, true);
 }
 
+export async function fetchTicketArchive(): Promise<TicketPoolListResponse> {
+  return apiFetch<TicketPoolListResponse>("/tickets/archive", {}, true);
+}
+
 export async function claimTicket(ticketId: number): Promise<SupportTicket> {
   return apiFetch<SupportTicket>(`/tickets/${ticketId}/claim`, { method: "POST" }, true);
 }
 
-export async function closeTicket(ticketId: number): Promise<SupportTicket> {
-  return apiFetch<SupportTicket>(`/tickets/${ticketId}/close`, { method: "POST" }, true);
+export async function closeTicket(
+  ticketId: number,
+  commentText: string,
+): Promise<SupportTicket> {
+  return apiFetch<SupportTicket>(
+    `/tickets/${ticketId}/close`,
+    {
+      method: "POST",
+      body: JSON.stringify({ comment_text: commentText }),
+    },
+    true,
+  );
 }
 
 export async function transferTicketToEngineers(ticketId: number): Promise<SupportTicket> {

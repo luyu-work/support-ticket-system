@@ -32,3 +32,13 @@ class TicketProblemReason(str, Enum):
     BUG_REPORT = "bug_report"
     FEATURE_REQUEST = "feature_request"
     OTHER = "other"
+
+
+class TicketActivityEventType(str, Enum):
+    """Audit log entries for a ticket lifecycle."""
+
+    CREATED = "created"
+    CLAIMED = "claimed"
+    MARKED_IMPORTANT = "marked_important"
+    CLOSED = "closed"
+    TRANSFERRED_TO_ENGINEERS = "transferred_to_engineers"
