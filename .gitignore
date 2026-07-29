@@ -35,6 +35,8 @@ htmlcov/
 # Local temp / extracts
 _pdf_text.txt
 *.log
+*.db
+ticket_system_local.db
 
 # Project brief / source requirements (local only, never commit)
 input.md

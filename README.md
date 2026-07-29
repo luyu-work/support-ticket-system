@@ -34,38 +34,47 @@ docker-compose.yml
 | `TicketComment` | `ticket_comments` | comments on a ticket |
 | `TicketAttachment` | `ticket_attachments` | photos (max 10 in app logic) |
 
-Apply migrations (PostgreSQL must be running):
+## Quick start (local, Windows PowerShell)
 
-```bash
-docker compose up -d postgres
-alembic upgrade head
-```
-
-## Quick start (local)
+Команды вводите **по одной строке**. Не копируйте несколько строк в одну.
 
 ### 1. Python env
 
-```bash
+```powershell
+cd C:\Users\lubu\Desktop\PythonProject
 python -m venv .venv
-
-# Windows PowerShell
 .\.venv\Scripts\Activate.ps1
-
 pip install -r requirements.txt
 copy .env.example .env
 ```
 
-### 2. PostgreSQL via Docker
+В `.env` по умолчанию стоит **SQLite** (Docker не нужен):
 
-```bash
-docker compose up -d postgres
+```env
+DATABASE_URL_OVERRIDE=sqlite:///./ticket_system_local.db
 ```
 
-### 3. Run API
+### 2. Run API (без Docker)
 
-```bash
+```powershell
+.\.venv\Scripts\Activate.ps1
 python start_project.py
 ```
+
+Таблицы и admin/agent создадутся сами при старте.
+
+### 3. (Опционально) PostgreSQL через Docker
+
+Нужен [Docker Desktop](https://www.docker.com/products/docker-desktop/).  
+Потом в `.env` уберите/закомментируйте `DATABASE_URL_OVERRIDE` и:
+
+```powershell
+docker compose up -d postgres
+python -m alembic upgrade head
+python start_project.py
+```
+
+Важно: `alembic` — через venv: `python -m alembic`, не просто `alembic`.
 
 - API: http://127.0.0.1:8000  
 - Docs: http://127.0.0.1:8000/docs  

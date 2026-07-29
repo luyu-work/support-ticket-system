@@ -16,6 +16,10 @@ class ApplicationSettings(BaseSettings):
     application_environment: str = "local"
     application_debug: bool = True
 
+    # If set, used as-is (example: sqlite:///./ticket_system_local.db)
+    # If empty — build PostgreSQL URL from fields below.
+    database_url_override: str | None = None
+
     postgres_host: str = "localhost"
     postgres_port: int = 5432
     postgres_user: str = "ticket_admin"
@@ -39,11 +43,18 @@ class ApplicationSettings(BaseSettings):
 
     @property
     def database_connection_url(self) -> str:
-        """SQLAlchemy URL for PostgreSQL."""
+        """SQLAlchemy URL: override (SQLite/Postgres) or default PostgreSQL."""
+        if self.database_url_override:
+            return self.database_url_override
+
         return (
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_database}"
         )
+
+    @property
+    def uses_sqlite_database(self) -> bool:
+        return self.database_connection_url.startswith("sqlite")
 
 
 @lru_cache
