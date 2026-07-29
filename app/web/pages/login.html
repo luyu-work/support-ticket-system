@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Вход — Support Ticket System</title>
+    <link rel="stylesheet" href="/static/css/auth.css" />
+  </head>
+  <body data-page="login">
+    <main class="auth-card">
+      <h1 class="auth-brand">Support Ticket System</h1>
+      <p class="auth-subtitle">Войдите как клиент, агент или администратор</p>
+
+      <form id="login-form" class="auth-form" novalidate>
+        <div class="field">
+          <label for="email">Почта</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">Пароль</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="current-password"
+            placeholder="Ваш пароль"
+            required
+          />
+        </div>
+
+        <p id="auth-message" class="auth-message" aria-live="polite"></p>
+
+        <button class="btn-primary" type="submit">Войти</button>
+      </form>
+
+      <p class="auth-footer">
+        Нет аккаунта?
+        <a href="/register">Зарегистрироваться</a>
+      </p>
+    </main>
+
+    <script src="/static/js/auth.js"></script>
+  </body>
+</html>

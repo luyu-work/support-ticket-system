@@ -97,13 +97,19 @@ def ensure_staff_user_account(
 ) -> UserAccount:
     """
     Create staff account if missing.
-    Does not overwrite password if the account already exists.
+    If the email already exists, refresh name/password/role from seed settings.
     """
     if role not in {UserRole.ADMIN, UserRole.AGENT}:
         raise ValueError("ensure_staff_user_account is only for admin or agent")
 
     existing_account = get_user_account_by_email(database_session, email)
     if existing_account is not None:
+        existing_account.full_name = full_name.strip()
+        existing_account.hashed_password = hash_plain_password(plain_password)
+        existing_account.role = role
+        existing_account.is_active = True
+        database_session.commit()
+        database_session.refresh(existing_account)
         return existing_account
 
     staff_account = UserAccount(

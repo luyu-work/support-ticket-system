@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Регистрация — Support Ticket System</title>
+    <link rel="stylesheet" href="/static/css/auth.css" />
+  </head>
+  <body data-page="register">
+    <main class="auth-card">
+      <h1 class="auth-brand">Регистрация</h1>
+      <p class="auth-subtitle">Создайте аккаунт клиента, чтобы отправлять тикеты</p>
+
+      <form id="register-form" class="auth-form" novalidate>
+        <div class="field">
+          <label for="full_name">ФИО</label>
+          <input
+            id="full_name"
+            name="full_name"
+            type="text"
+            autocomplete="name"
+            placeholder="Иван Иванов"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="email">Почта</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autocomplete="username"
+            placeholder="you@example.com"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label for="password">Пароль (минимум 8 символов)</label>
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autocomplete="new-password"
+            placeholder="Придумайте пароль"
+            minlength="8"
+            required
+          />
+        </div>
+
+        <p id="auth-message" class="auth-message" aria-live="polite"></p>
+
+        <button class="btn-primary" type="submit">Создать аккаунт</button>
+      </form>
+
+      <p class="auth-footer">
+        Уже есть аккаунт?
+        <a href="/login">Войти</a>
+      </p>
+    </main>
+
+    <script src="/static/js/auth.js"></script>
+  </body>
+</html>

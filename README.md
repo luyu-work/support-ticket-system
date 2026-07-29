@@ -92,8 +92,19 @@ Default staff (created on API startup if missing):
 
 | Role | Email | Password |
 |------|--------|----------|
-| admin | `admin@example.com` | `AdminChangeMe123` |
-| agent | `agent@example.com` | `AgentChangeMe123` |
+| admin | `root@gmail.com` | `root` |
+| agent | `agent_1@gmail.com` | `agent_1` |
+
+### UI pages (v.0.4.0)
+
+| URL | Page |
+|-----|------|
+| `/` | redirect → `/login` |
+| `/login` | login form |
+| `/register` | client registration |
+| `/home` | after-login placeholder |
+
+Open after `python start_project.py`: http://127.0.0.1:8000/login
 
 Change them in `.env` (`SEED_ADMIN_*`, `SEED_AGENT_*`).
 
