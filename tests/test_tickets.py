@@ -50,6 +50,7 @@ def test_client_creates_ticket_without_photos(
     assert payload["status"] == "in_queue"
     assert payload["problem_reason"] == "login_issue"
     assert payload["title"] == "Проблема со входом"
+    assert payload["problem_reason"] == "login_issue"
     assert payload["attachments"] == []
 
     saved = database_session.get(SupportTicket, payload["support_ticket_id"])
@@ -159,3 +160,21 @@ def test_new_ticket_page_available(api_test_client: TestClient) -> None:
     response = api_test_client.get("/tickets/new")
     assert response.status_code == 200
     assert 'id="new-ticket-form"' in response.text
+
+
+def test_my_tickets_page_available(api_test_client: TestClient) -> None:
+    response = api_test_client.get("/tickets")
+    assert response.status_code == 200
+    assert "Мои тикеты" in response.text
+    assert "Обратная связь" in response.text
+    assert 'id="my-tickets-list"' in response.text
+
+
+def test_problem_reason_labels_match_product(api_test_client: TestClient) -> None:
+    response = api_test_client.get("/tickets/problem-reasons")
+    labels = {item["value"]: item["label_ru"] for item in response.json()}
+    assert labels["bug_report"] == "Баги"
+    assert labels["payment_issue"] == "Проблема с оплатой"
+    assert labels["feature_request"] == "Предложения по улучшению"
+    assert labels["login_issue"] == "Проблема со входом"
+    assert labels["other"] == "Другое"

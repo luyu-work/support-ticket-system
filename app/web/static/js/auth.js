@@ -33,9 +33,9 @@ function showFormMessage(messageElement, text, type) {
 }
 
 function redirectAfterLogin(userAccount) {
-  // client → форма тикета; agent/admin → home (пул / dashboard — следующие шаги)
+  // client → «Мои тикеты»; agent/admin → home (пул / dashboard — следующие шаги)
   if (userAccount && userAccount.role === "client") {
-    window.location.href = "/tickets/new";
+    window.location.href = "/tickets";
     return;
   }
   window.location.href = "/home";

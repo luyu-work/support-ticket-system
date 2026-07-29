@@ -45,10 +45,10 @@ class TicketProblemReasonOption(BaseModel):
 
 
 PROBLEM_REASON_LABELS_RU: dict[str, str] = {
-    TicketProblemReason.LOGIN_ISSUE.value: "Проблема со входом",
+    TicketProblemReason.BUG_REPORT.value: "Баги",
     TicketProblemReason.PAYMENT_ISSUE.value: "Проблема с оплатой",
-    TicketProblemReason.BUG_REPORT.value: "Ошибка / баг",
-    TicketProblemReason.FEATURE_REQUEST.value: "Предложение по улучшению",
+    TicketProblemReason.FEATURE_REQUEST.value: "Предложения по улучшению",
+    TicketProblemReason.LOGIN_ISSUE.value: "Проблема со входом",
     TicketProblemReason.OTHER.value: "Другое",
 }
 

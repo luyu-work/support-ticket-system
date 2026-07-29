@@ -1,3 +1,5 @@
+/** Shared labels for ticket UI */
+
 const STATUS_LABELS_RU = {
   in_queue: "В очереди",
   important: "Важное",
@@ -5,6 +7,178 @@ const STATUS_LABELS_RU = {
   closed: "Закрыт",
   transferred_to_engineers: "Передан инженерам",
 };
+
+const PROBLEM_REASON_LABELS_RU = {
+  bug_report: "Баги",
+  payment_issue: "Проблема с оплатой",
+  feature_request: "Предложения по улучшению",
+  login_issue: "Проблема со входом",
+  other: "Другое",
+};
+
+function escapeHtml(text) {
+  return String(text)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function getCategoryLabel(problemReason) {
+  return PROBLEM_REASON_LABELS_RU[problemReason] || problemReason;
+}
+
+function getStatusLabel(status) {
+  return STATUS_LABELS_RU[status] || status;
+}
+
+function getFirstLetter(fullName) {
+  const trimmed = (fullName || "").trim();
+  return trimmed ? trimmed[0].toUpperCase() : "?";
+}
+
+function buildTicketCardHtml(ticket) {
+  const number = ticket.support_ticket_id;
+  const category = getCategoryLabel(ticket.problem_reason);
+  const status = ticket.status;
+  const statusLabel = getStatusLabel(status);
+  const description = ticket.description || "";
+
+  return `
+    <button
+      type="button"
+      class="ticket-card"
+      data-ticket-id="${number}"
+      data-ticket-open
+    >
+      <div class="ticket-card-top">
+        <div class="ticket-card-content">
+          <div class="ticket-card-number">Тикет №${number}</div>
+          <div class="ticket-card-category">${escapeHtml(category)}</div>
+        </div>
+        <span class="status-tag status-tag--${escapeHtml(status)}">${escapeHtml(statusLabel)}</span>
+      </div>
+      <p class="ticket-card-description">${escapeHtml(description)}</p>
+    </button>
+  `;
+}
+
+async function fetchMyTickets() {
+  const accessToken = getAccessToken();
+  const response = await fetch("/tickets/my?page_size=100", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.ok) {
+    throw new Error("Не удалось загрузить тикеты");
+  }
+  return response.json();
+}
+
+async function renderMyTicketsList() {
+  const listElement = document.getElementById("my-tickets-list");
+  if (!listElement) return;
+
+  try {
+    const payload = await fetchMyTickets();
+    if (!payload.items.length) {
+      listElement.innerHTML = `<p class="muted-text">Пока нет тикетов. Нажмите «Обратная связь», чтобы создать первый.</p>`;
+      return;
+    }
+
+    // Newest first already from API; show as-is
+    listElement.innerHTML = payload.items.map(buildTicketCardHtml).join("");
+
+    listElement.querySelectorAll("[data-ticket-open]").forEach((cardButton) => {
+      cardButton.addEventListener("click", () => {
+        const ticketId = cardButton.getAttribute("data-ticket-id");
+        const ticket = payload.items.find(
+          (item) => String(item.support_ticket_id) === String(ticketId),
+        );
+        openTicketModalStub(ticket);
+      });
+    });
+  } catch {
+    listElement.innerHTML = `<p class="muted-text">Не удалось загрузить тикеты</p>`;
+  }
+}
+
+function openTicketModalStub(ticket) {
+  const modal = document.getElementById("ticket-modal");
+  const title = document.getElementById("ticket-modal-title");
+  const summary = document.getElementById("ticket-modal-summary");
+  if (!modal || !title || !summary) return;
+
+  if (!ticket) {
+    title.textContent = "Тикет";
+    summary.textContent = "";
+  } else {
+    title.textContent = `Тикет №${ticket.support_ticket_id}`;
+    summary.textContent = [
+      `Категория: ${getCategoryLabel(ticket.problem_reason)}`,
+      `Статус: ${getStatusLabel(ticket.status)}`,
+      "",
+      ticket.description,
+    ].join("\n");
+  }
+
+  modal.hidden = false;
+}
+
+function closeTicketModal() {
+  const modal = document.getElementById("ticket-modal");
+  if (modal) modal.hidden = true;
+}
+
+function initTicketModal() {
+  const modal = document.getElementById("ticket-modal");
+  if (!modal) return;
+
+  modal.querySelectorAll("[data-close-modal]").forEach((element) => {
+    element.addEventListener("click", closeTicketModal);
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !modal.hidden) {
+      closeTicketModal();
+    }
+  });
+}
+
+function fillClientProfile() {
+  const userAccount = getStoredUserAccount();
+  if (!userAccount) return;
+
+  const nameElement = document.getElementById("profile-full-name");
+  const avatarElement = document.getElementById("profile-avatar");
+  if (nameElement) nameElement.textContent = userAccount.full_name;
+  if (avatarElement) avatarElement.textContent = getFirstLetter(userAccount.full_name);
+}
+
+function initLogoutButton() {
+  const logoutButton = document.getElementById("logout-button");
+  if (!logoutButton) return;
+  logoutButton.addEventListener("click", () => {
+    clearAuthSession();
+    window.location.href = "/login";
+  });
+}
+
+function requireClientSession() {
+  const userAccount = getStoredUserAccount();
+  const accessToken = getAccessToken();
+
+  if (!accessToken || !userAccount) {
+    window.location.href = "/login";
+    return null;
+  }
+  if (userAccount.role !== "client") {
+    window.location.href = "/home";
+    return null;
+  }
+  return userAccount;
+}
+
+/* ----- New ticket form ----- */
 
 async function loadProblemReasons() {
   const selectElement = document.getElementById("problem_reason");
@@ -23,50 +197,6 @@ async function loadProblemReasons() {
   });
 }
 
-async function loadMyTickets() {
-  const listElement = document.getElementById("my-tickets-list");
-  if (!listElement) return;
-
-  const accessToken = getAccessToken();
-  const response = await fetch("/tickets/my", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-
-  if (!response.ok) {
-    listElement.innerHTML = `<p class="muted-text">Не удалось загрузить тикеты</p>`;
-    return;
-  }
-
-  const payload = await response.json();
-  if (!payload.items.length) {
-    listElement.innerHTML = `<p class="muted-text">Пока нет тикетов — создайте первый</p>`;
-    return;
-  }
-
-  listElement.innerHTML = payload.items
-    .map((ticket) => {
-      const statusLabel = STATUS_LABELS_RU[ticket.status] || ticket.status;
-      const photoCount = (ticket.attachments || []).length;
-      const photoText = photoCount ? ` · фото: ${photoCount}` : "";
-      return `
-        <article class="ticket-card">
-          <h3 class="ticket-card-title">#${ticket.support_ticket_id} · ${escapeHtml(ticket.title)}</h3>
-          <p class="ticket-card-meta">${escapeHtml(ticket.description).slice(0, 160)}</p>
-          <span class="status-pill">${statusLabel}${photoText}</span>
-        </article>
-      `;
-    })
-    .join("");
-}
-
-function escapeHtml(text) {
-  return String(text)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
 function initPhotoHint() {
   const photosInput = document.getElementById("photos");
   const hintElement = document.getElementById("photos-hint");
@@ -77,7 +207,7 @@ function initPhotoHint() {
     if (count === 0) {
       hintElement.textContent = "Файлы не выбраны";
     } else if (count > 10) {
-      hintElement.textContent = `Выбрано ${count} — максимум 10, лишние не отправятся`;
+      hintElement.textContent = `Выбрано ${count} — максимум 10`;
     } else {
       hintElement.textContent = `Выбрано файлов: ${count}`;
     }
@@ -113,7 +243,7 @@ async function submitNewTicketForm(event) {
   files.forEach((file) => formData.append("photos", file));
 
   if (submitButton) submitButton.disabled = true;
-  showFormMessage(messageElement, "Отправляем тикет…", "");
+  showFormMessage(messageElement, "Отправляем…", "");
 
   try {
     const response = await fetch("/tickets", {
@@ -132,15 +262,8 @@ async function submitNewTicketForm(event) {
       return;
     }
 
-    showFormMessage(
-      messageElement,
-      `Тикет #${payload.support_ticket_id} создан и в очереди`,
-      "success",
-    );
-    form.reset();
-    const hintElement = document.getElementById("photos-hint");
-    if (hintElement) hintElement.textContent = "Файлы не выбраны";
-    await loadMyTickets();
+    // Back to list after create
+    window.location.href = "/tickets";
   } catch {
     showFormMessage(messageElement, "Сервер недоступен", "error");
   } finally {
@@ -148,48 +271,37 @@ async function submitNewTicketForm(event) {
   }
 }
 
+async function initMyTicketsPage() {
+  if (!requireClientSession()) return;
+  fillClientProfile();
+  initLogoutButton();
+  initTicketModal();
+  await renderMyTicketsList();
+}
+
 async function initNewTicketPage() {
-  const userAccount = getStoredUserAccount();
-  const accessToken = getAccessToken();
-  const logoutButton = document.getElementById("logout-button");
-  const form = document.getElementById("new-ticket-form");
-
-  if (!accessToken || !userAccount) {
-    window.location.href = "/login";
-    return;
-  }
-
-  if (userAccount.role !== "client") {
-    window.location.href = "/home";
-    return;
-  }
-
-  if (logoutButton) {
-    logoutButton.addEventListener("click", () => {
-      clearAuthSession();
-      window.location.href = "/login";
-    });
-  }
-
+  if (!requireClientSession()) return;
+  initLogoutButton();
   initPhotoHint();
 
   try {
     await loadProblemReasons();
-    await loadMyTickets();
   } catch {
-    const listElement = document.getElementById("my-tickets-list");
-    if (listElement) {
-      listElement.innerHTML = `<p class="muted-text">Ошибка загрузки данных</p>`;
-    }
+    showFormMessage(
+      document.getElementById("ticket-message"),
+      "Не удалось загрузить категории",
+      "error",
+    );
   }
 
+  const form = document.getElementById("new-ticket-form");
   if (form) {
     form.addEventListener("submit", submitNewTicketForm);
   }
 }
 
 document.addEventListener("DOMContentLoaded", () => {
-  if (document.body.dataset.page === "new-ticket") {
-    initNewTicketPage();
-  }
+  const pageName = document.body.dataset.page;
+  if (pageName === "my-tickets") initMyTicketsPage();
+  if (pageName === "new-ticket") initNewTicketPage();
 });
