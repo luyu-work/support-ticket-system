@@ -2,7 +2,6 @@ import uvicorn
 
 
 def run_local_development_server() -> None:
-    """Start uvicorn with auto-reload for local work."""
     uvicorn.run(
         "app.main:ticket_system_application",
         host="127.0.0.1",

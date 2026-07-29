@@ -48,8 +48,9 @@ class ApplicationSettings(BaseSettings):
     @property
     def database_connection_url(self) -> str:
         """SQLAlchemy URL: override (SQLite/Postgres) or default PostgreSQL."""
-        if self.database_url_override:
-            return self.database_url_override
+        override = (self.database_url_override or "").strip()
+        if override:
+            return override
 
         return (
             f"postgresql+psycopg2://{self.postgres_user}:{self.postgres_password}"

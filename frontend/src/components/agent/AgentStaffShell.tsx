@@ -20,7 +20,7 @@ export function AgentStaffShell({ user, activeNav, children }: AgentStaffShellPr
   const isAdmin = user.role === "admin";
   const roleLabel = isAdmin
     ? "Администратор"
-    : formatAgentBadge(user.user_account_id);
+    : formatAgentBadge(user.user_account_id, user.agent_number);
 
   return (
     <div className="agent-page">

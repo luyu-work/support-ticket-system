@@ -69,6 +69,10 @@ async function apiFetch<T>(
     } catch {
       /* empty */
     }
+    // Expired / invalid JWT — drop local session so UI can send user to login
+    if (response.status === 401 && auth) {
+      clearAuthSession();
+    }
     throw new ApiError(response.status, formatDetail(payload));
   }
 

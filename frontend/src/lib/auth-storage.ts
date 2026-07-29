@@ -36,8 +36,12 @@ export function getPostLoginPath(userAccount: UserAccount): string {
   return "/home";
 }
 
-export function formatAgentBadge(userAccountId: number): string {
-  return `Агент #${String(userAccountId).padStart(3, "0")}`;
+export function formatAgentBadge(
+  userAccountId: number,
+  agentNumber?: number | null,
+): string {
+  const number = agentNumber != null ? agentNumber : userAccountId;
+  return `Агент #${String(number).padStart(3, "0")}`;
 }
 
 export function formatTicketCreatedAt(isoDate: string): string {

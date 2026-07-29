@@ -15,6 +15,8 @@ export interface UserAccount {
   is_active: boolean;
   is_online: boolean;
   created_at: string;
+  /** Admin-assigned agent №; null for client/admin */
+  agent_number?: number | null;
 }
 
 export interface AccessTokenResponse {

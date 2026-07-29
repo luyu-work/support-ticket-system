@@ -12,14 +12,15 @@ class ClientRegistrationRequest(BaseModel):
 
     email: EmailStr
     full_name: str = Field(min_length=1, max_length=255)
-    password: str = Field(min_length=8, max_length=128)
+    # bcrypt truncates above 72 bytes — keep the API limit aligned
+    password: str = Field(min_length=8, max_length=72)
 
 
 class UserLoginRequest(BaseModel):
     """Body for login (client, agent, or admin)."""
 
     email: EmailStr
-    password: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=72)
 
 
 class UserAccountResponse(BaseModel):
@@ -34,6 +35,8 @@ class UserAccountResponse(BaseModel):
     is_active: bool
     is_online: bool
     created_at: datetime
+    # Present for agents (admin-assigned №); null for client/admin
+    agent_number: int | None = None
 
 
 class AccessTokenResponse(BaseModel):

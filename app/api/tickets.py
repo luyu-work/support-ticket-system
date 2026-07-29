@@ -46,6 +46,7 @@ from app.services.support_ticket_service import (
     list_tickets_for_client,
     transfer_ticket_to_engineers_by_agent,
 )
+from app.services.ticket_photo_storage import get_ticket_uploads_root
 
 logger = logging.getLogger(__name__)
 
@@ -167,12 +168,23 @@ def _tickets_to_pool_items(tickets: list) -> list[PoolTicketItem]:
     return items
 
 
+_POOL_STATUS_FILTERS = frozenset(
+    {
+        "in_queue",
+        "important",
+        "in_progress",
+        "transferred_to_engineers",
+    }
+)
+
+
 @tickets_router.get("/pool", response_model=TicketPoolListResponse)
 def list_ticket_pool(
     database_session: DatabaseSessionDep,
     _staff_account: StaffAccountDep,
-    status: str | None = Query(
+    status_filter: str | None = Query(
         None,
+        alias="status",
         description="Optional filter: in_queue | important | in_progress | transferred_to_engineers",
     ),
 ) -> TicketPoolListResponse:
@@ -181,7 +193,15 @@ def list_ticket_pool(
     Any free agent can claim an unassigned ticket from this list.
     Closed tickets live in /tickets/archive.
     """
-    tickets = list_common_ticket_pool(database_session, status_filter=status)
+    if status_filter is not None and status_filter not in _POOL_STATUS_FILTERS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=(
+                "Invalid status filter. Allowed: "
+                + ", ".join(sorted(_POOL_STATUS_FILTERS))
+            ),
+        )
+    tickets = list_common_ticket_pool(database_session, status_filter=status_filter)
     items = _tickets_to_pool_items(tickets)
     return TicketPoolListResponse(items=items, total_ticket_count=len(items))
 
@@ -353,6 +373,23 @@ def download_ticket_attachment_file(
     file_path = Path(attachment.storage_path)
     if not file_path.is_absolute():
         file_path = Path.cwd() / file_path
+    file_path = file_path.resolve()
+
+    # Only serve files under the configured uploads root (path traversal guard)
+    uploads_root = get_ticket_uploads_root().resolve()
+    try:
+        file_path.relative_to(uploads_root)
+    except ValueError as error:
+        logger.warning(
+            "Attachment path outside uploads root | ticket_id=%s path=%s",
+            support_ticket_id,
+            file_path,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Attachment not found",
+        ) from error
+
     if not file_path.is_file():
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing on disk")
 

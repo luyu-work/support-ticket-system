@@ -7,7 +7,7 @@
 | **Backend** | FastAPI · SQLAlchemy · Alembic · JWT · pytest |
 | **Frontend** | Next.js (App Router) · React · TypeScript |
 | **БД** | PostgreSQL (Docker) или SQLite локально |
-| **Версия** | `v.0.12.0` |
+| **Версия** | `v.1.0.0` |
 
 ---
 

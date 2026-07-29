@@ -26,7 +26,13 @@ services:
     env_file:
       - .env.example
     environment:
+      # Force Postgres in Docker (override SQLite default from .env.example)
+      DATABASE_URL_OVERRIDE: ""
       POSTGRES_HOST: postgres
+      POSTGRES_PORT: "5432"
+      POSTGRES_USER: ticket_admin
+      POSTGRES_PASSWORD: ticket_secret_change_me
+      POSTGRES_DATABASE: ticket_system
     ports:
       - "8000:8000"
     depends_on:
