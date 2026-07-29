@@ -102,6 +102,7 @@ export function AgentEditorModal({
 
   const [fullName, setFullName] = useState("");
   const [agentNumber, setAgentNumber] = useState("1");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [workDays, setWorkDays] = useState<number[]>([0, 1, 2, 3, 4]);
   const [startMin, setStartMin] = useState(9 * 60);
@@ -137,10 +138,11 @@ export function AgentEditorModal({
     setMessage("");
     setMessageType("");
     setConfirmDelete(false);
-    setPassword("");
     if (mode === "edit" && agent) {
       setFullName(agent.full_name);
       setAgentNumber(String(agent.agent_number ?? ""));
+      setEmail(agent.email || "");
+      setPassword(agent.password || "");
       setWorkDays(agent.work_days.length ? agent.work_days : [0, 1, 2, 3, 4]);
       const start = labelToMinutes(agent.work_time_start || "09:00");
       const end = labelToMinutes(agent.work_time_end || "18:00");
@@ -151,6 +153,8 @@ export function AgentEditorModal({
     } else {
       setFullName("");
       setAgentNumber("");
+      setEmail("");
+      setPassword("");
       setWorkDays([0, 1, 2, 3, 4]);
       setStartMin(9 * 60);
       setEndMin(18 * 60);
@@ -312,13 +316,18 @@ export function AgentEditorModal({
       setMessageType("error");
       return;
     }
+    if (!email.trim() || !email.includes("@")) {
+      setMessage("Укажите корректный email");
+      setMessageType("error");
+      return;
+    }
     if (workDays.length === 0) {
       setMessage("Выберите рабочие дни");
       setMessageType("error");
       return;
     }
-    if (mode === "create" && !password) {
-      setMessage("Задайте пароль");
+    if (!password.trim() || password.trim().length < 4) {
+      setMessage("Пароль не короче 4 символов");
       setMessageType("error");
       return;
     }
@@ -326,7 +335,8 @@ export function AgentEditorModal({
     const payload = {
       full_name: fullName.trim(),
       agent_number: number,
-      password: password || undefined,
+      email: email.trim(),
+      password: password.trim(),
       work_days: workDays,
       work_time_start: minutesToLabel(resolvedStart),
       work_time_end: minutesToLabel(resolvedEnd),
@@ -335,23 +345,9 @@ export function AgentEditorModal({
     setLoading(true);
     try {
       if (mode === "create") {
-        await createAgent({
-          full_name: payload.full_name,
-          agent_number: payload.agent_number,
-          password: password,
-          work_days: payload.work_days,
-          work_time_start: payload.work_time_start,
-          work_time_end: payload.work_time_end,
-        });
+        await createAgent(payload);
       } else if (agent) {
-        await updateAgent(agent.user_account_id, {
-          full_name: payload.full_name,
-          agent_number: payload.agent_number,
-          password: password || undefined,
-          work_days: payload.work_days,
-          work_time_start: payload.work_time_start,
-          work_time_end: payload.work_time_end,
-        });
+        await updateAgent(agent.user_account_id, payload);
       }
       onSaved();
       onClose();
@@ -453,20 +449,37 @@ export function AgentEditorModal({
               />
             </div>
             <div className="field">
-              <label className="field-label" htmlFor="agent-password">
-                Пароль{mode === "create" ? <span className="required-mark">*</span> : null}
+              <label className="field-label" htmlFor="agent-email">
+                Почта<span className="required-mark">*</span>
               </label>
               <input
-                id="agent-password"
+                id="agent-email"
                 className="input-shell"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder={mode === "edit" ? "Не менять" : "Минимум 4 символа"}
-                autoComplete="new-password"
-                required={mode === "create"}
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="agent_1@gmail.com"
+                autoComplete="off"
+                required
               />
             </div>
+          </div>
+
+          <div className="field">
+            <label className="field-label" htmlFor="agent-password">
+              Пароль<span className="required-mark">*</span>
+            </label>
+            <input
+              id="agent-password"
+              className="input-shell"
+              type="text"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Минимум 4 символа"
+              autoComplete="off"
+              spellCheck={false}
+              required
+            />
           </div>
 
           <div className="field schedule-field">

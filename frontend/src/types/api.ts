@@ -107,6 +107,8 @@ export interface AgentAdmin {
   work_time_start: string | null;
   work_time_end: string | null;
   work_time_label: string;
+  /** Last password set in admin UI (for editing convenience). */
+  password?: string | null;
   created_at: string;
 }
 
@@ -118,6 +120,7 @@ export interface AgentListResponse {
 export interface AgentCreatePayload {
   full_name: string;
   agent_number: number;
+  email: string;
   password: string;
   work_days: number[];
   work_time_start: string;
@@ -127,6 +130,7 @@ export interface AgentCreatePayload {
 export interface AgentUpdatePayload {
   full_name?: string;
   agent_number?: number;
+  email?: string;
   password?: string;
   work_days?: number[];
   work_time_start?: string;

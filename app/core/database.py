@@ -63,6 +63,10 @@ def _sqlite_add_missing_agent_columns() -> None:
         alters.append("ALTER TABLE user_accounts ADD COLUMN work_time_start VARCHAR(5)")
     if "work_time_end" not in existing:
         alters.append("ALTER TABLE user_accounts ADD COLUMN work_time_end VARCHAR(5)")
+    if "admin_visible_password" not in existing:
+        alters.append(
+            "ALTER TABLE user_accounts ADD COLUMN admin_visible_password VARCHAR(128)"
+        )
     if not alters:
         return
     with database_engine.begin() as connection:

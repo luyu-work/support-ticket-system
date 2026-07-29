@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -22,6 +21,10 @@ class AgentNotFoundError(Exception):
 
 
 class AgentNumberTakenError(Exception):
+    pass
+
+
+class AgentEmailTakenError(Exception):
     pass
 
 
@@ -66,11 +69,6 @@ def work_time_label(start: str | None, end: str | None) -> str:
     return f"{start}–{end}"
 
 
-def _agent_email_from_number(agent_number: int) -> str:
-    # .example.com passes EmailStr validation (unlike .local)
-    return f"agent_{agent_number}@staff.example.com"
-
-
 def _assert_time_range(start: str, end: str) -> None:
     def to_minutes(value: str) -> int:
         hour, minute = value.split(":")
@@ -99,6 +97,7 @@ def agent_to_response(agent: UserAccount) -> dict:
         "work_time_start": agent.work_time_start,
         "work_time_end": agent.work_time_end,
         "work_time_label": work_time_label(agent.work_time_start, agent.work_time_end),
+        "password": agent.admin_visible_password,
         "created_at": agent.created_at,
     }
 
@@ -128,8 +127,9 @@ def _ensure_agent_number_free(
     *,
     exclude_user_id: int | None = None,
 ) -> None:
-    query = select(UserAccount).where(UserAccount.agent_number == agent_number)
-    existing = database_session.scalar(query)
+    existing = database_session.scalar(
+        select(UserAccount).where(UserAccount.agent_number == agent_number)
+    )
     if existing is None:
         return
     if exclude_user_id is not None and existing.user_account_id == exclude_user_id:
@@ -137,11 +137,28 @@ def _ensure_agent_number_free(
     raise AgentNumberTakenError
 
 
+def _ensure_email_free(
+    database_session: Session,
+    email: str,
+    *,
+    exclude_user_id: int | None = None,
+) -> None:
+    existing = database_session.scalar(
+        select(UserAccount).where(UserAccount.email == email)
+    )
+    if existing is None:
+        return
+    if exclude_user_id is not None and existing.user_account_id == exclude_user_id:
+        return
+    raise AgentEmailTakenError
+
+
 def create_agent(
     database_session: Session,
     *,
     full_name: str,
     agent_number: int,
+    email: str,
     plain_password: str,
     work_days: list[int],
     work_time_start: str,
@@ -149,19 +166,14 @@ def create_agent(
 ) -> UserAccount:
     _assert_time_range(work_time_start, work_time_end)
     _ensure_agent_number_free(database_session, agent_number)
-
-    email = _agent_email_from_number(agent_number)
-    email_taken = database_session.scalar(
-        select(UserAccount).where(UserAccount.email == email)
-    )
-    if email_taken is not None:
-        # Rare collision with legacy emails — suffix with free slot
-        email = f"agent_{agent_number}_{agent_number}@staff.example.com"
+    normalized_email = email.strip().lower()
+    _ensure_email_free(database_session, normalized_email)
 
     agent = UserAccount(
-        email=email,
+        email=normalized_email,
         full_name=full_name.strip(),
         hashed_password=hash_plain_password(plain_password),
+        admin_visible_password=plain_password,
         role=UserRole.AGENT,
         is_active=True,
         is_online=False,
@@ -183,6 +195,7 @@ def update_agent(
     user_account_id: int,
     full_name: str | None = None,
     agent_number: int | None = None,
+    email: str | None = None,
     plain_password: str | None = None,
     work_days: list[int] | None = None,
     work_time_start: str | None = None,
@@ -199,17 +212,21 @@ def update_agent(
             exclude_user_id=agent.user_account_id,
         )
         agent.agent_number = agent_number
-        # Keep login email in sync with number when using staff.local pattern
-        if agent.email.endswith("@staff.example.com") or re.match(
-            r"^agent_\d+@",
-            agent.email,
-        ):
-            agent.email = _agent_email_from_number(agent_number)
+
+    if email is not None:
+        normalized_email = email.strip().lower()
+        _ensure_email_free(
+            database_session,
+            normalized_email,
+            exclude_user_id=agent.user_account_id,
+        )
+        agent.email = normalized_email
 
     if full_name is not None:
         agent.full_name = full_name.strip()
     if plain_password:
         agent.hashed_password = hash_plain_password(plain_password)
+        agent.admin_visible_password = plain_password
     if work_days is not None:
         agent.work_days = dump_work_days(work_days)
 

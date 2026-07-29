@@ -48,6 +48,8 @@ class UserAccount(DatabaseModelBase):
     # "HH:MM" 24h local
     work_time_start: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
     work_time_end: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
+    # Last password set by admin (for admin UI only; login still uses hashed_password)
+    admin_visible_password: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

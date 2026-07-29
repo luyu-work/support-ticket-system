@@ -12,6 +12,7 @@ from app.schemas.admin import (
     AgentUpdateRequest,
 )
 from app.services.agent_admin_service import (
+    AgentEmailTakenError,
     AgentNotFoundError,
     AgentNumberTakenError,
     AgentValidationError,
@@ -58,6 +59,7 @@ def create_support_agent(
             database_session,
             full_name=body.full_name,
             agent_number=body.agent_number,
+            email=body.email,
             plain_password=body.password,
             work_days=body.work_days,
             work_time_start=body.work_time_start,
@@ -67,6 +69,11 @@ def create_support_agent(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Номер агента уже занят",
+        ) from error
+    except AgentEmailTakenError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email уже занят",
         ) from error
     except AgentValidationError as error:
         raise HTTPException(
@@ -107,6 +114,7 @@ def patch_support_agent(
             user_account_id=user_account_id,
             full_name=body.full_name,
             agent_number=body.agent_number,
+            email=body.email,
             plain_password=body.password,
             work_days=body.work_days,
             work_time_start=body.work_time_start,
@@ -121,6 +129,11 @@ def patch_support_agent(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Номер агента уже занят",
+        ) from error
+    except AgentEmailTakenError as error:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email уже занят",
         ) from error
     except AgentValidationError as error:
         raise HTTPException(

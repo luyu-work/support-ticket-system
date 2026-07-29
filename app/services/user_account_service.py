@@ -134,6 +134,7 @@ def ensure_staff_user_account(
                 existing_account.work_time_start = work_time_start
             if work_time_end is not None:
                 existing_account.work_time_end = work_time_end
+            existing_account.admin_visible_password = plain_password
         database_session.commit()
         database_session.refresh(existing_account)
         return existing_account
@@ -142,6 +143,7 @@ def ensure_staff_user_account(
         email=normalize_email(email),
         full_name=full_name.strip(),
         hashed_password=hash_plain_password(plain_password),
+        admin_visible_password=plain_password if role == UserRole.AGENT else None,
         role=role,
         is_active=True,
         is_online=False,

@@ -468,9 +468,9 @@
 }
 
 .schedule-day.is-active {
-  background: #3761f3;
-  border-color: #3761f3;
-  color: #f1f5ff;
+  border-color: rgba(55, 97, 243, 0.45);
+  background: rgba(55, 97, 243, 0.1);
+  color: #3761f3;
 }
 
 .schedule-time-summary {
