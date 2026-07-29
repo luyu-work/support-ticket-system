@@ -34,10 +34,10 @@ class ApplicationSettings(BaseSettings):
     seed_staff_on_startup: bool = True
     seed_admin_email: str = "root@gmail.com"
     seed_admin_password: str = "root"
-    seed_admin_full_name: str = "System Administrator"
+    seed_admin_full_name: str = "Харисов Данил Мансурович"
     seed_agent_email: str = "agent_1@gmail.com"
     seed_agent_password: str = "agent_1"
-    seed_agent_full_name: str = "Support Agent"
+    seed_agent_full_name: str = "Денисов Игорь Сергеевич"
 
     log_level: str = "INFO"
 
