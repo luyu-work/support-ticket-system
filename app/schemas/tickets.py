@@ -1,0 +1,60 @@
+"""Request/response bodies for support tickets."""
+
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
+
+from app.models.enums import TicketProblemReason, TicketStatus
+
+
+class TicketAttachmentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    ticket_attachment_id: int
+    original_file_name: str
+    storage_path: str
+    uploaded_at: datetime
+
+
+class SupportTicketResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    support_ticket_id: int
+    title: str
+    problem_reason: str
+    description: str
+    status: TicketStatus
+    due_date: datetime | None
+    created_at: datetime
+    updated_at: datetime
+    client_author_id: int
+    assigned_agent_id: int | None
+    attachments: list[TicketAttachmentResponse] = Field(default_factory=list)
+
+
+class SupportTicketListResponse(BaseModel):
+    items: list[SupportTicketResponse]
+    total_ticket_count: int
+    page_number: int
+    page_size: int
+
+
+class TicketProblemReasonOption(BaseModel):
+    value: str
+    label_ru: str
+
+
+PROBLEM_REASON_LABELS_RU: dict[str, str] = {
+    TicketProblemReason.LOGIN_ISSUE.value: "Проблема со входом",
+    TicketProblemReason.PAYMENT_ISSUE.value: "Проблема с оплатой",
+    TicketProblemReason.BUG_REPORT.value: "Ошибка / баг",
+    TicketProblemReason.FEATURE_REQUEST.value: "Предложение по улучшению",
+    TicketProblemReason.OTHER.value: "Другое",
+}
+
+
+def list_problem_reason_options() -> list[TicketProblemReasonOption]:
+    return [
+        TicketProblemReasonOption(value=reason.value, label_ru=PROBLEM_REASON_LABELS_RU[reason.value])
+        for reason in TicketProblemReason
+    ]

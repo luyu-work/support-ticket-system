@@ -41,6 +41,10 @@ class ApplicationSettings(BaseSettings):
 
     log_level: str = "INFO"
 
+    # Ticket photo uploads (relative to project root)
+    ticket_uploads_directory: str = "uploads/ticket_attachments"
+    max_ticket_photo_size_bytes: int = 5 * 1024 * 1024  # 5 MB per file
+
     @property
     def database_connection_url(self) -> str:
         """SQLAlchemy URL: override (SQLite/Postgres) or default PostgreSQL."""

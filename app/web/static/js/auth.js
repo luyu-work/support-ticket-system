@@ -33,7 +33,11 @@ function showFormMessage(messageElement, text, type) {
 }
 
 function redirectAfterLogin(userAccount) {
-  // Later: client → ticket form, agent → pool, admin → dashboard
+  // client → форма тикета; agent/admin → home (пул / dashboard — следующие шаги)
+  if (userAccount && userAccount.role === "client") {
+    window.location.href = "/tickets/new";
+    return;
+  }
   window.location.href = "/home";
 }
 

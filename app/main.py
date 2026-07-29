@@ -32,7 +32,7 @@ def create_ticket_system_application() -> FastAPI:
     ticket_system_application = FastAPI(
         title="Support Ticket System",
         description="Clients create tickets; agents work on them; admin watches the pool.",
-        version="0.4.0",
+        version="0.5.0",
         debug=settings.application_debug,
         lifespan=ticket_system_lifespan,
     )

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Новый тикет — Support Ticket System</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/static/css/auth.css" />
+    <link rel="stylesheet" href="/static/css/tickets.css" />
+  </head>
+  <body data-page="new-ticket">
+    <main class="ticket-page">
+      <header class="ticket-header">
+        <div>
+          <h1 class="auth-title ticket-title">Новый тикет</h1>
+          <p class="auth-subtitle ticket-subtitle">
+            Выберите причину, опишите проблему и при необходимости прикрепите фото (до 10)
+          </p>
+        </div>
+        <button id="logout-button" class="btn-secondary" type="button">Выйти</button>
+      </header>
+
+      <form id="new-ticket-form" class="ticket-form" novalidate>
+        <div class="field">
+          <label for="problem_reason">Причина проблемы</label>
+          <div class="input-shell">
+            <select id="problem_reason" name="problem_reason" required>
+              <option value="" disabled selected>Выберите причину</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="description">Описание</label>
+          <div class="input-shell textarea-shell">
+            <textarea
+              id="description"
+              name="description"
+              rows="6"
+              placeholder="Опишите, что произошло…"
+              required
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="photos">Фотографии (необязательно, до 10)</label>
+          <div class="input-shell file-shell">
+            <input
+              id="photos"
+              name="photos"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+            />
+          </div>
+          <p id="photos-hint" class="field-hint">Файлы не выбраны</p>
+        </div>
+
+        <p id="ticket-message" class="auth-message" aria-live="polite"></p>
+
+        <button class="btn-primary" type="submit">Отправить тикет</button>
+      </form>
+
+      <section class="my-tickets-block">
+        <h2 class="section-title">Мои тикеты</h2>
+        <div id="my-tickets-list" class="my-tickets-list">
+          <p class="muted-text">Загрузка…</p>
+        </div>
+      </section>
+    </main>
+
+    <script src="/static/js/auth.js"></script>
+    <script src="/static/js/tickets.js"></script>
+  </body>
+</html>

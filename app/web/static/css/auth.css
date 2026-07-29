@@ -1,4 +1,4 @@
-/* Auth screens — static layout from design (no hover/press yet) */
+/* Auth screens */
 
 :root {
   --page-bg: #f8f8f8;
@@ -7,6 +7,8 @@
   --text-40: rgba(21, 21, 21, 0.4);
   --border-10: rgba(21, 21, 21, 0.1);
   --accent: #3761f3;
+  --accent-90: rgba(55, 97, 243, 0.9);
+  --accent-80: rgba(55, 97, 243, 0.8);
   --button-text: #f1f5ff;
   --danger: #d64545;
   --success: #2f9e44;
@@ -112,10 +114,14 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
+  padding: 12px 16px;
   border-radius: var(--radius-input);
   border: 1px solid var(--border-10);
   background: transparent;
+}
+
+.input-shell:focus-within {
+  border-color: var(--accent);
 }
 
 .input-shell input {
@@ -124,7 +130,6 @@ body {
   border: none;
   outline: none;
   background: transparent;
-  padding: 0 0 2px;
   color: var(--text);
   font-family: var(--font);
   font-size: 16px;
@@ -190,7 +195,7 @@ body {
 .btn-primary {
   width: 100%;
   margin: 0;
-  padding: 12px 24px 14px;
+  padding: 12px 24px;
   border: none;
   border-radius: var(--radius-input);
   background: var(--accent);
@@ -200,6 +205,14 @@ body {
   font-weight: 500;
   line-height: 1.5;
   cursor: pointer;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--accent-90);
+}
+
+.btn-primary:active:not(:disabled) {
+  background: var(--accent-80);
 }
 
 .btn-primary:disabled {
@@ -229,6 +242,16 @@ body {
   text-decoration: none;
   border-bottom: 1px solid var(--accent);
   padding-bottom: 2px;
+}
+
+.auth-footer a:hover {
+  color: var(--accent-90);
+  border-bottom-color: var(--accent-90);
+}
+
+.auth-footer a:active {
+  color: var(--accent-80);
+  border-bottom-color: var(--accent-80);
 }
 
 /* ----- Home placeholder (light, same palette) ----- */

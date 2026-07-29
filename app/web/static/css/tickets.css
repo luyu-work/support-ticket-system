@@ -1,0 +1,139 @@
+/* Ticket form page */
+
+.ticket-page {
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.ticket-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+}
+
+.ticket-title {
+  text-align: left;
+  font-size: 32px;
+}
+
+.ticket-subtitle {
+  text-align: left;
+  margin-top: 8px;
+}
+
+.ticket-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.input-shell select,
+.input-shell textarea {
+  flex: 1 1 auto;
+  width: 100%;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  font-weight: 400;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+.input-shell select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16' fill='none'%3E%3Cpath d='M4 6L8 10L12 6' stroke='%23151515' stroke-opacity='0.4' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0 center;
+  padding-right: 24px;
+}
+
+.textarea-shell {
+  align-items: flex-start;
+}
+
+.file-shell {
+  cursor: pointer;
+}
+
+.file-shell input[type="file"] {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: var(--font);
+  font-size: 14px;
+  color: var(--text-60);
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--text-40);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.my-tickets-block {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.section-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.my-tickets-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ticket-card {
+  border: 1px solid var(--border-10);
+  border-radius: 12px;
+  padding: 14px 16px;
+  background: #fff;
+}
+
+.ticket-card-title {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.ticket-card-meta {
+  margin: 0;
+  font-size: 14px;
+  color: var(--text-60);
+  line-height: 1.4;
+}
+
+.muted-text {
+  margin: 0;
+  color: var(--text-40);
+  font-size: 14px;
+}
+
+.status-pill {
+  display: inline-block;
+  margin-top: 6px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: rgba(55, 97, 243, 0.1);
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}

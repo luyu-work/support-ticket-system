@@ -126,9 +126,22 @@ Authorization: Bearer <access_token>
 | `/` | редирект → `/login` |
 | `/login` | форма входа |
 | `/register` | регистрация client |
-| `/home` | заглушка после входа |
+| `/tickets/new` | форма создания тикета (client) |
+| `/home` | заглушка (agent / admin) |
 
-После `python start_project.py` откройте: http://127.0.0.1:8000/login
+После `python start_project.py` откройте: http://127.0.0.1:8000/login  
+Клиент после входа/регистрации попадает на `/tickets/new`.
+
+### Тикеты (v.0.5.0)
+
+| Method | Path | Кто |
+|--------|------|-----|
+| `GET` | `/tickets/problem-reasons` | список причин для select |
+| `POST` | `/tickets` | client создаёт тикет (`multipart`: `problem_reason`, `description`, optional `photos`) |
+| `GET` | `/tickets/my` | client — свои тикеты |
+| `GET` | `/tickets/{id}` | client (свои) / agent / admin |
+
+Статус нового тикета: `in_queue`. Фото — до 10 шт., папка `uploads/` (не в git).
 
 ### 5. Тесты
 

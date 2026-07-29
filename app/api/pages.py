@@ -33,3 +33,8 @@ def open_register_page() -> FileResponse:
 @pages_router.get("/home")
 def open_home_page() -> FileResponse:
     return _page_file("home.html")
+
+
+@pages_router.get("/tickets/new")
+def open_new_ticket_page() -> FileResponse:
+    return _page_file("new_ticket.html")

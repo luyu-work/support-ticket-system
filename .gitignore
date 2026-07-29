@@ -45,3 +45,6 @@ input.pdf
 # Docker volumes / data
 postgres_data/
 ticket_system_postgres_data/
+
+# Uploaded ticket photos
+uploads/
