@@ -1,44 +1,47 @@
 # Support Ticket System
 
-Clients create support tickets. Agents pick them from a pool, comment, and close them. Admins watch the queue (MVP dashboard later).
+Система тикетов поддержки. Клиенты создают обращения, агенты берут их из пула, комментируют и закрывают. Админ смотрит очередь (MVP dashboard — позже).
 
-## Stack
+## Стек
 
 - FastAPI
-- PostgreSQL
+- PostgreSQL (или SQLite для локальной разработки)
 - SQLAlchemy + Alembic
-- JWT auth (next steps)
-- Docker
+- JWT
+- Docker (опционально)
 - pytest
 
-## Project layout
+## Структура проекта
 
 ```
 app/
-  main.py              # FastAPI app factory + entrypoint
+  main.py              # factory приложения FastAPI + entrypoint
   core/                # settings, database, logging
-  api/                 # HTTP routes
+  api/                 # HTTP-роуты
   models/              # UserAccount, SupportTicket, comments, attachments
-  schemas/             # request/response bodies (later)
-alembic/               # DB migrations
+  schemas/             # тела request/response
+  services/            # бизнес-логика
+  web/                 # HTML-страницы и static (CSS/JS)
+alembic/               # миграции БД
 tests/
 docker-compose.yml
+start_project.py       # локальный запуск API
 ```
 
-### Database models (v.0.2.0)
+### Модели БД
 
-| Model | Table | Role |
-|-------|--------|------|
+| Model | Table | Назначение |
+|-------|--------|------------|
 | `UserAccount` | `user_accounts` | client / agent / admin |
-| `SupportTicket` | `support_tickets` | ticket + status + reason |
-| `TicketComment` | `ticket_comments` | comments on a ticket |
-| `TicketAttachment` | `ticket_attachments` | photos (max 10 in app logic) |
+| `SupportTicket` | `support_tickets` | тикет, статус, причина |
+| `TicketComment` | `ticket_comments` | комментарии к тикету |
+| `TicketAttachment` | `ticket_attachments` | фото (до 10 на тикет — в логике приложения) |
 
-## Quick start (local, Windows PowerShell)
+## Быстрый старт (Windows PowerShell)
 
 Команды вводите **по одной строке**. Не копируйте несколько строк в одну.
 
-### 1. Python env
+### 1. Окружение Python
 
 ```powershell
 cd C:\Users\lubu\Desktop\PythonProject
@@ -48,25 +51,32 @@ pip install -r requirements.txt
 copy .env.example .env
 ```
 
-В `.env` по умолчанию стоит **SQLite** (Docker не нужен):
+В `.env` по умолчанию используется **SQLite** (Docker не нужен):
 
 ```env
 DATABASE_URL_OVERRIDE=sqlite:///./ticket_system_local.db
 ```
 
-### 2. Run API (без Docker)
+### 2. Запуск API (без Docker)
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 python start_project.py
 ```
 
-Таблицы и admin/agent создадутся сами при старте.
+Таблицы и учётки admin/agent создаются при старте (если их ещё нет).
+
+Полезные адреса:
+
+- UI вход: http://127.0.0.1:8000/login  
+- API: http://127.0.0.1:8000  
+- Docs: http://127.0.0.1:8000/docs  
+- Health: http://127.0.0.1:8000/health  
 
 ### 3. (Опционально) PostgreSQL через Docker
 
 Нужен [Docker Desktop](https://www.docker.com/products/docker-desktop/).  
-Потом в `.env` уберите/закомментируйте `DATABASE_URL_OVERRIDE` и:
+В `.env` уберите или закомментируйте `DATABASE_URL_OVERRIDE`, затем:
 
 ```powershell
 docker compose up -d postgres
@@ -74,41 +84,26 @@ python -m alembic upgrade head
 python start_project.py
 ```
 
-Важно: `alembic` — через venv: `python -m alembic`, не просто `alembic`.
+Важно: Alembic запускайте через venv: `python -m alembic`, а не просто `alembic`.
 
-- API: http://127.0.0.1:8000  
-- Docs: http://127.0.0.1:8000/docs  
-- Health: http://127.0.0.1:8000/health  
+### 4. Auth
 
-### 4. Auth (v.0.3.0)
-
-| Method | Path | Who |
+| Method | Path | Кто |
 |--------|------|-----|
-| POST | `/auth/register` | new client (email, full_name, password) |
-| POST | `/auth/login` | client / agent / admin |
-| GET | `/auth/me` | any logged-in user (Bearer token) |
+| `POST` | `/auth/register` | новый client (`email`, `full_name`, `password`) |
+| `POST` | `/auth/login` | client / agent / admin |
+| `GET` | `/auth/me` | любой авторизованный пользователь (`Bearer` token) |
 
-Default staff (created on API startup if missing):
+**Staff по умолчанию** (создаётся при старте API, если записи с таким email ещё нет):
 
 | Role | Email | Password |
 |------|--------|----------|
 | admin | `root@gmail.com` | `root` |
 | agent | `agent_1@gmail.com` | `agent_1` |
 
-### UI pages (v.0.4.0)
+Сменить можно в `.env` (`SEED_ADMIN_*`, `SEED_AGENT_*`).
 
-| URL | Page |
-|-----|------|
-| `/` | redirect → `/login` |
-| `/login` | login form |
-| `/register` | client registration |
-| `/home` | after-login placeholder |
-
-Open after `python start_project.py`: http://127.0.0.1:8000/login
-
-Change them in `.env` (`SEED_ADMIN_*`, `SEED_AGENT_*`).
-
-Example register body:
+Пример тела для `POST /auth/register`:
 
 ```json
 {
@@ -118,27 +113,43 @@ Example register body:
 }
 ```
 
-Use `Authorization: Bearer <access_token>` for protected routes.
+Для защищённых эндпоинтов:
 
-### 5. Tests
+```http
+Authorization: Bearer <access_token>
+```
 
-```bash
+### Страницы UI
+
+| URL | Страница |
+|-----|----------|
+| `/` | редирект → `/login` |
+| `/login` | форма входа |
+| `/register` | регистрация client |
+| `/home` | заглушка после входа |
+
+После `python start_project.py` откройте: http://127.0.0.1:8000/login
+
+### 5. Тесты
+
+```powershell
 pytest
 ```
 
-### Full stack in Docker
+### Полный стек в Docker
 
-```bash
+```powershell
 docker compose up --build
 ```
 
-API will be on http://127.0.0.1:8000 (uses settings from `.env.example` by default).
+API будет на http://127.0.0.1:8000 (настройки из `.env.example`, если не переопределены).
 
-## Versioning
+## Версионирование
 
-Commits use `v.x.x.x` (major.minor.patch).
+Коммиты в формате `v.x.x.x` (major.minor.patch).
 
-## Notes
+## Заметки
 
-- Local brief `input.md` is **not** committed (see `.gitignore`).
-- Secrets live in `.env` (not in git). Copy from `.env.example`.
+- Локальное ТЗ `input.md` **не** коммитится (см. `.gitignore`).
+- Секреты хранятся в `.env` (не в git). Образец — `.env.example`.
+- Локальный файл SQLite `ticket_system_local.db` тоже не в git.
