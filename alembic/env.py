@@ -6,8 +6,13 @@ from sqlalchemy import engine_from_config, pool
 from app.core.database import DatabaseModelBase
 from app.core.settings import get_application_settings
 
-# Import models here later so Alembic "sees" tables, e.g.:
-# import app.models.user  # noqa: F401
+# Register all models on metadata so Alembic can autogenerate later
+from app.models import (  # noqa: F401
+    SupportTicket,
+    TicketAttachment,
+    TicketComment,
+    UserAccount,
+)
 
 alembic_config = context.config
 application_settings = get_application_settings()

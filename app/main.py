@@ -17,7 +17,7 @@ def create_ticket_system_application() -> FastAPI:
     ticket_system_application = FastAPI(
         title="Support Ticket System",
         description="Clients create tickets; agents work on them; admin watches the pool.",
-        version="0.1.0",
+        version="0.2.0",
         debug=settings.application_debug,
     )
     ticket_system_application.include_router(api_router)

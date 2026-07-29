@@ -18,11 +18,27 @@ app/
   main.py              # FastAPI app factory + entrypoint
   core/                # settings, database, logging
   api/                 # HTTP routes
-  models/              # SQLAlchemy tables (later)
+  models/              # UserAccount, SupportTicket, comments, attachments
   schemas/             # request/response bodies (later)
 alembic/               # DB migrations
 tests/
 docker-compose.yml
+```
+
+### Database models (v.0.2.0)
+
+| Model | Table | Role |
+|-------|--------|------|
+| `UserAccount` | `user_accounts` | client / agent / admin |
+| `SupportTicket` | `support_tickets` | ticket + status + reason |
+| `TicketComment` | `ticket_comments` | comments on a ticket |
+| `TicketAttachment` | `ticket_attachments` | photos (max 10 in app logic) |
+
+Apply migrations (PostgreSQL must be running):
+
+```bash
+docker compose up -d postgres
+alembic upgrade head
 ```
 
 ## Quick start (local)
