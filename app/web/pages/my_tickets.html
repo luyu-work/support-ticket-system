@@ -59,23 +59,40 @@
       </section>
     </div>
 
-    <!-- Detail stub modal -->
+    <!-- Ticket detail modal (client view) -->
     <div id="ticket-detail-modal" class="ticket-modal" hidden>
       <div class="ticket-modal-backdrop" data-close-detail-modal></div>
-      <div class="ticket-modal-dialog ticket-modal-dialog--narrow" role="dialog" aria-modal="true" aria-labelledby="ticket-detail-title">
-        <div class="ticket-modal-header">
-          <h2 id="ticket-detail-title">Тикет</h2>
+      <div
+        class="ticket-modal-dialog ticket-modal-dialog--wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="ticket-detail-title"
+      >
+        <div class="ticket-modal-header ticket-detail-header">
+          <div class="ticket-detail-header-main">
+            <h2 id="ticket-detail-title">Тикет №…</h2>
+            <span id="ticket-detail-status" class="status-tag">…</span>
+          </div>
           <button type="button" class="icon-button" data-close-detail-modal aria-label="Закрыть">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M12 12L8.00001 8.00001M8.00001 8.00001L4 4M8.00001 8.00001L12 4M8.00001 8.00001L4 12" stroke="#333333" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
         </div>
-        <div class="ticket-modal-body">
-          <p class="muted-text">
-            Модальное окно-заглушка. Макет детального просмотра появится позже.
-          </p>
-          <p id="ticket-detail-summary" class="ticket-modal-summary"></p>
+
+        <div id="ticket-detail-body" class="ticket-detail-body">
+          <div class="ticket-detail-field">
+            <div class="ticket-detail-label">Категория</div>
+            <div id="ticket-detail-category" class="ticket-detail-value">…</div>
+          </div>
+          <div class="ticket-detail-field">
+            <div class="ticket-detail-label">Описание</div>
+            <div id="ticket-detail-description" class="ticket-detail-value">…</div>
+          </div>
+          <div class="ticket-detail-field" id="ticket-detail-photos-field" hidden>
+            <div class="ticket-detail-label">Фотографии</div>
+            <div id="ticket-detail-photos" class="ticket-detail-photos"></div>
+          </div>
         </div>
       </div>
     </div>

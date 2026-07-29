@@ -1,10 +1,15 @@
 """HTTP API for support tickets."""
 
 import logging
+import mimetypes
+from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
+from sqlalchemy import select
 
 from app.api.deps import ClientAccountDep, CurrentUserAccountDep, DatabaseSessionDep
+from app.models import TicketAttachment
 from app.schemas.tickets import (
     SupportTicketListResponse,
     SupportTicketResponse,
@@ -109,6 +114,16 @@ def list_my_support_tickets(
     )
 
 
+def _assert_user_can_view_ticket(current_user_account, ticket) -> None:
+    role_value = (
+        current_user_account.role.value
+        if hasattr(current_user_account.role, "value")
+        else str(current_user_account.role)
+    )
+    if role_value == "client" and ticket.client_author_id != current_user_account.user_account_id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
+
+
 @tickets_router.get("/{support_ticket_id}", response_model=SupportTicketResponse)
 def get_support_ticket_detail(
     support_ticket_id: int,
@@ -123,12 +138,45 @@ def get_support_ticket_detail(
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
-    role_value = (
-        current_user_account.role.value
-        if hasattr(current_user_account.role, "value")
-        else str(current_user_account.role)
-    )
-    if role_value == "client" and ticket.client_author_id != current_user_account.user_account_id:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
-
+    _assert_user_can_view_ticket(current_user_account, ticket)
     return SupportTicketResponse.model_validate(ticket)
+
+
+@tickets_router.get(
+    "/{support_ticket_id}/attachments/{ticket_attachment_id}/file",
+    include_in_schema=False,
+)
+def download_ticket_attachment_file(
+    support_ticket_id: int,
+    ticket_attachment_id: int,
+    database_session: DatabaseSessionDep,
+    current_user_account: CurrentUserAccountDep,
+) -> FileResponse:
+    """Serve a ticket photo (auth required)."""
+    ticket = get_support_ticket_by_id(database_session, support_ticket_id)
+    if ticket is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
+
+    _assert_user_can_view_ticket(current_user_account, ticket)
+
+    attachment = database_session.scalar(
+        select(TicketAttachment).where(
+            TicketAttachment.ticket_attachment_id == ticket_attachment_id,
+            TicketAttachment.support_ticket_id == support_ticket_id,
+        )
+    )
+    if attachment is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")
+
+    file_path = Path(attachment.storage_path)
+    if not file_path.is_absolute():
+        file_path = Path.cwd() / file_path
+    if not file_path.is_file():
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="File missing on disk")
+
+    media_type, _ = mimetypes.guess_type(str(file_path))
+    return FileResponse(
+        path=file_path,
+        media_type=media_type or "application/octet-stream",
+        filename=attachment.original_file_name,
+    )

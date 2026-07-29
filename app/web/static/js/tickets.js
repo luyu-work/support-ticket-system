@@ -109,34 +109,132 @@ async function renderMyTicketsList() {
   }
 }
 
-/* ----- Detail stub modal ----- */
+/* ----- Ticket detail modal (client) ----- */
 
-function openTicketDetailModal(ticket) {
+/** @type {string[]} */
+let detailPhotoObjectUrls = [];
+
+function revokeDetailPhotoObjectUrls() {
+  detailPhotoObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  detailPhotoObjectUrls = [];
+}
+
+function updateTicketDetailBodyScrollState() {
+  const body = document.getElementById("ticket-detail-body");
+  const dialog = document.querySelector("#ticket-detail-modal .ticket-modal-dialog");
+  if (!body || !dialog) return;
+
+  requestAnimationFrame(() => {
+    const dialogMaxPx = parseFloat(window.getComputedStyle(dialog).maxHeight);
+    const header = dialog.querySelector(".ticket-modal-header");
+    const headerHeight = header ? header.getBoundingClientRect().height : 0;
+    const available = dialogMaxPx - headerHeight;
+
+    if (!Number.isFinite(available) || available <= 0) {
+      body.classList.remove("is-scrollable");
+      body.style.maxHeight = "";
+      return;
+    }
+
+    body.style.maxHeight = `${available}px`;
+    const needsScroll = body.scrollHeight > available + 2;
+    body.classList.toggle("is-scrollable", needsScroll);
+    if (!needsScroll) body.scrollTop = 0;
+  });
+}
+
+async function fetchTicketAttachmentObjectUrl(supportTicketId, attachmentId) {
+  const accessToken = getAccessToken();
+  const response = await fetch(
+    `/tickets/${supportTicketId}/attachments/${attachmentId}/file`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  );
+  if (!response.ok) {
+    throw new Error("photo load failed");
+  }
+  const blob = await response.blob();
+  const objectUrl = URL.createObjectURL(blob);
+  detailPhotoObjectUrls.push(objectUrl);
+  return objectUrl;
+}
+
+async function renderTicketDetailPhotos(ticket) {
+  const photosField = document.getElementById("ticket-detail-photos-field");
+  const photosList = document.getElementById("ticket-detail-photos");
+  if (!photosField || !photosList) return;
+
+  revokeDetailPhotoObjectUrls();
+  photosList.innerHTML = "";
+
+  const attachments = ticket.attachments || [];
+  if (!attachments.length) {
+    photosField.hidden = true;
+    return;
+  }
+
+  photosField.hidden = false;
+
+  for (const attachment of attachments) {
+    try {
+      const objectUrl = await fetchTicketAttachmentObjectUrl(
+        ticket.support_ticket_id,
+        attachment.ticket_attachment_id,
+      );
+      const image = document.createElement("img");
+      image.className = "ticket-detail-photo";
+      image.src = objectUrl;
+      image.alt = attachment.original_file_name || "Фото";
+      photosList.appendChild(image);
+    } catch {
+      // skip broken file
+    }
+  }
+}
+
+async function openTicketDetailModal(ticket) {
   const modal = document.getElementById("ticket-detail-modal");
   const title = document.getElementById("ticket-detail-title");
-  const summary = document.getElementById("ticket-detail-summary");
-  if (!modal || !title || !summary) return;
+  const statusEl = document.getElementById("ticket-detail-status");
+  const categoryEl = document.getElementById("ticket-detail-category");
+  const descriptionEl = document.getElementById("ticket-detail-description");
+  if (!modal || !title || !statusEl || !categoryEl || !descriptionEl) return;
 
   if (!ticket) {
-    title.textContent = "Тикет";
-    summary.textContent = "";
-  } else {
-    title.textContent = `Тикет №${ticket.support_ticket_id}`;
-    summary.textContent = [
-      `Категория: ${getCategoryLabel(ticket.problem_reason)}`,
-      `Статус: ${getStatusLabel(ticket.status)}`,
-      "",
-      ticket.description,
-    ].join("\n");
+    return;
   }
+
+  // Prefer fresh detail from API (attachments included)
+  let detailTicket = ticket;
+  try {
+    const accessToken = getAccessToken();
+    const response = await fetch(`/tickets/${ticket.support_ticket_id}`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (response.ok) {
+      detailTicket = await response.json();
+    }
+  } catch {
+    // use list payload
+  }
+
+  const status = detailTicket.status;
+  title.textContent = `Тикет №${detailTicket.support_ticket_id}`;
+  statusEl.textContent = getStatusLabel(status);
+  statusEl.className = `status-tag status-tag--${status}`;
+  categoryEl.textContent = getCategoryLabel(detailTicket.problem_reason);
+  descriptionEl.textContent = detailTicket.description || "";
 
   modal.hidden = false;
   document.body.classList.add("modal-open");
+
+  await renderTicketDetailPhotos(detailTicket);
+  updateTicketDetailBodyScrollState();
 }
 
 function closeTicketDetailModal() {
   const modal = document.getElementById("ticket-detail-modal");
   if (modal) modal.hidden = true;
+  revokeDetailPhotoObjectUrls();
   if (!isAnyModalOpen()) {
     document.body.classList.remove("modal-open");
   }
@@ -522,6 +620,10 @@ function initCreateTicketModal() {
   window.addEventListener("resize", () => {
     if (createModal && !createModal.hidden) {
       updateCreateTicketFormScrollState();
+    }
+    const detailModal = document.getElementById("ticket-detail-modal");
+    if (detailModal && !detailModal.hidden) {
+      updateTicketDetailBodyScrollState();
     }
   });
 }
