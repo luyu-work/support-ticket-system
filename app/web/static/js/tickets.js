@@ -1,4 +1,4 @@
-/** Shared labels for ticket UI */
+/** Client tickets list + create modal + detail stub */
 
 const STATUS_LABELS_RU = {
   in_queue: "В очереди",
@@ -15,6 +15,12 @@ const PROBLEM_REASON_LABELS_RU = {
   login_issue: "Проблема со входом",
   other: "Другое",
 };
+
+const MAX_TICKET_PHOTOS = 10;
+
+/** @type {File[]} */
+let selectedTicketPhotos = [];
+let problemReasonsLoaded = false;
 
 function escapeHtml(text) {
   return String(text)
@@ -81,11 +87,11 @@ async function renderMyTicketsList() {
   try {
     const payload = await fetchMyTickets();
     if (!payload.items.length) {
-      listElement.innerHTML = `<p class="muted-text">Пока нет тикетов. Нажмите «Обратная связь», чтобы создать первый.</p>`;
+      listElement.innerHTML =
+        `<p class="muted-text">Пока нет тикетов. Нажмите «Обратная связь», чтобы создать первый.</p>`;
       return;
     }
 
-    // Newest first already from API; show as-is
     listElement.innerHTML = payload.items.map(buildTicketCardHtml).join("");
 
     listElement.querySelectorAll("[data-ticket-open]").forEach((cardButton) => {
@@ -94,7 +100,7 @@ async function renderMyTicketsList() {
         const ticket = payload.items.find(
           (item) => String(item.support_ticket_id) === String(ticketId),
         );
-        openTicketModalStub(ticket);
+        openTicketDetailModal(ticket);
       });
     });
   } catch {
@@ -102,10 +108,12 @@ async function renderMyTicketsList() {
   }
 }
 
-function openTicketModalStub(ticket) {
-  const modal = document.getElementById("ticket-modal");
-  const title = document.getElementById("ticket-modal-title");
-  const summary = document.getElementById("ticket-modal-summary");
+/* ----- Detail stub modal ----- */
+
+function openTicketDetailModal(ticket) {
+  const modal = document.getElementById("ticket-detail-modal");
+  const title = document.getElementById("ticket-detail-title");
+  const summary = document.getElementById("ticket-detail-summary");
   if (!modal || !title || !summary) return;
 
   if (!ticket) {
@@ -122,24 +130,223 @@ function openTicketModalStub(ticket) {
   }
 
   modal.hidden = false;
+  document.body.classList.add("modal-open");
 }
 
-function closeTicketModal() {
-  const modal = document.getElementById("ticket-modal");
+function closeTicketDetailModal() {
+  const modal = document.getElementById("ticket-detail-modal");
   if (modal) modal.hidden = true;
+  if (!isAnyModalOpen()) {
+    document.body.classList.remove("modal-open");
+  }
 }
 
-function initTicketModal() {
-  const modal = document.getElementById("ticket-modal");
-  if (!modal) return;
+/* ----- Create ticket modal ----- */
 
-  modal.querySelectorAll("[data-close-modal]").forEach((element) => {
-    element.addEventListener("click", closeTicketModal);
+function openCreateTicketModal() {
+  const modal = document.getElementById("create-ticket-modal");
+  if (!modal) return;
+  modal.hidden = false;
+  document.body.classList.add("modal-open");
+  loadProblemReasonsIntoSelect();
+}
+
+function closeCreateTicketModal() {
+  const modal = document.getElementById("create-ticket-modal");
+  if (modal) modal.hidden = true;
+  resetCreateTicketForm();
+  if (!isAnyModalOpen()) {
+    document.body.classList.remove("modal-open");
+  }
+}
+
+function isAnyModalOpen() {
+  const createModal = document.getElementById("create-ticket-modal");
+  const detailModal = document.getElementById("ticket-detail-modal");
+  return (
+    (createModal && !createModal.hidden) ||
+    (detailModal && !detailModal.hidden)
+  );
+}
+
+function resetCreateTicketForm() {
+  const form = document.getElementById("create-ticket-form");
+  if (form) form.reset();
+  selectedTicketPhotos = [];
+  renderPhotoPreviews();
+  const messageElement = document.getElementById("create-ticket-message");
+  if (messageElement) {
+    messageElement.textContent = "";
+    messageElement.className = "auth-message";
+  }
+}
+
+async function loadProblemReasonsIntoSelect() {
+  if (problemReasonsLoaded) return;
+  const selectElement = document.getElementById("problem_reason");
+  if (!selectElement) return;
+
+  try {
+    const response = await fetch("/tickets/problem-reasons");
+    if (!response.ok) throw new Error("load failed");
+    const reasons = await response.json();
+    reasons.forEach((reason) => {
+      const option = document.createElement("option");
+      option.value = reason.value;
+      option.textContent = reason.label_ru;
+      selectElement.appendChild(option);
+    });
+    problemReasonsLoaded = true;
+  } catch {
+    const messageElement = document.getElementById("create-ticket-message");
+    showFormMessage(messageElement, "Не удалось загрузить причины", "error");
+  }
+}
+
+function renderPhotoPreviews() {
+  const listElement = document.getElementById("photo-preview-list");
+  const addButton = document.getElementById("add-photo-button");
+  if (!listElement || !addButton) return;
+
+  listElement.querySelectorAll(".photo-preview-tile").forEach((node) => node.remove());
+
+  selectedTicketPhotos.forEach((file, index) => {
+    const tile = document.createElement("div");
+    tile.className = "photo-preview-tile";
+    const objectUrl = URL.createObjectURL(file);
+    tile.innerHTML = `
+      <img src="${objectUrl}" alt="" />
+      <button type="button" class="photo-remove-button" data-photo-index="${index}" aria-label="Удалить фото">×</button>
+    `;
+    listElement.insertBefore(tile, addButton);
   });
 
+  listElement.querySelectorAll("[data-photo-index]").forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const index = Number(button.getAttribute("data-photo-index"));
+      selectedTicketPhotos.splice(index, 1);
+      renderPhotoPreviews();
+    });
+  });
+
+  addButton.hidden = selectedTicketPhotos.length >= MAX_TICKET_PHOTOS;
+}
+
+function initPhotoPicker() {
+  const addButton = document.getElementById("add-photo-button");
+  const fileInput = document.getElementById("photos-input");
+  if (!addButton || !fileInput) return;
+
+  addButton.addEventListener("click", () => fileInput.click());
+
+  fileInput.addEventListener("change", () => {
+    const incoming = fileInput.files ? Array.from(fileInput.files) : [];
+    const freeSlots = MAX_TICKET_PHOTOS - selectedTicketPhotos.length;
+    selectedTicketPhotos = selectedTicketPhotos.concat(incoming.slice(0, freeSlots));
+    fileInput.value = "";
+    renderPhotoPreviews();
+  });
+}
+
+async function submitCreateTicketForm(event) {
+  event.preventDefault();
+
+  const form = event.currentTarget;
+  const messageElement = document.getElementById("create-ticket-message");
+  const submitButton = form.querySelector('button[type="submit"]');
+  const accessToken = getAccessToken();
+
+  const problemReason = form.problem_reason.value;
+  const description = form.description.value.trim();
+
+  if (!problemReason) {
+    showFormMessage(messageElement, "Выберите причину", "error");
+    return;
+  }
+  if (!description) {
+    showFormMessage(messageElement, "Заполните описание", "error");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("problem_reason", problemReason);
+  formData.append("description", description);
+  selectedTicketPhotos.forEach((file) => formData.append("photos", file));
+
+  if (submitButton) submitButton.disabled = true;
+  showFormMessage(messageElement, "Отправляем…", "");
+
+  try {
+    const response = await fetch("/tickets", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      let detail = payload.detail || "Не удалось создать тикет";
+      if (Array.isArray(detail)) {
+        detail = detail.map((item) => item.msg || JSON.stringify(item)).join("; ");
+      }
+      showFormMessage(messageElement, detail, "error");
+      return;
+    }
+
+    closeCreateTicketModal();
+    await renderMyTicketsList();
+  } catch {
+    showFormMessage(messageElement, "Сервер недоступен", "error");
+  } finally {
+    if (submitButton) submitButton.disabled = false;
+  }
+}
+
+function initCreateTicketModal() {
+  const openButton = document.getElementById("open-create-ticket-button");
+  const form = document.getElementById("create-ticket-form");
+  const createModal = document.getElementById("create-ticket-modal");
+
+  if (openButton) {
+    openButton.addEventListener("click", openCreateTicketModal);
+  }
+
+  if (createModal) {
+    createModal.querySelectorAll("[data-close-create-modal]").forEach((element) => {
+      element.addEventListener("click", closeCreateTicketModal);
+    });
+  }
+
+  initPhotoPicker();
+
+  if (form) {
+    form.addEventListener("submit", submitCreateTicketForm);
+  }
+}
+
+function initDetailModal() {
+  const detailModal = document.getElementById("ticket-detail-modal");
+  if (!detailModal) return;
+
+  detailModal.querySelectorAll("[data-close-detail-modal]").forEach((element) => {
+    element.addEventListener("click", closeTicketDetailModal);
+  });
+}
+
+function initModalKeyboard() {
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape" && !modal.hidden) {
-      closeTicketModal();
+    if (event.key !== "Escape") return;
+
+    const createModal = document.getElementById("create-ticket-modal");
+    const detailModal = document.getElementById("ticket-detail-modal");
+
+    if (createModal && !createModal.hidden) {
+      closeCreateTicketModal();
+      return;
+    }
+    if (detailModal && !detailModal.hidden) {
+      closeTicketDetailModal();
     }
   });
 }
@@ -178,130 +385,18 @@ function requireClientSession() {
   return userAccount;
 }
 
-/* ----- New ticket form ----- */
-
-async function loadProblemReasons() {
-  const selectElement = document.getElementById("problem_reason");
-  if (!selectElement) return;
-
-  const response = await fetch("/tickets/problem-reasons");
-  if (!response.ok) {
-    throw new Error("Не удалось загрузить причины");
-  }
-  const reasons = await response.json();
-  reasons.forEach((reason) => {
-    const option = document.createElement("option");
-    option.value = reason.value;
-    option.textContent = reason.label_ru;
-    selectElement.appendChild(option);
-  });
-}
-
-function initPhotoHint() {
-  const photosInput = document.getElementById("photos");
-  const hintElement = document.getElementById("photos-hint");
-  if (!photosInput || !hintElement) return;
-
-  photosInput.addEventListener("change", () => {
-    const count = photosInput.files ? photosInput.files.length : 0;
-    if (count === 0) {
-      hintElement.textContent = "Файлы не выбраны";
-    } else if (count > 10) {
-      hintElement.textContent = `Выбрано ${count} — максимум 10`;
-    } else {
-      hintElement.textContent = `Выбрано файлов: ${count}`;
-    }
-  });
-}
-
-async function submitNewTicketForm(event) {
-  event.preventDefault();
-
-  const form = event.currentTarget;
-  const messageElement = document.getElementById("ticket-message");
-  const submitButton = form.querySelector('button[type="submit"]');
-  const accessToken = getAccessToken();
-
-  const problemReason = form.problem_reason.value;
-  const description = form.description.value.trim();
-  const photosInput = form.photos;
-
-  if (!problemReason) {
-    showFormMessage(messageElement, "Выберите причину проблемы", "error");
-    return;
-  }
-  if (!description) {
-    showFormMessage(messageElement, "Заполните описание", "error");
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("problem_reason", problemReason);
-  formData.append("description", description);
-
-  const files = photosInput.files ? Array.from(photosInput.files).slice(0, 10) : [];
-  files.forEach((file) => formData.append("photos", file));
-
-  if (submitButton) submitButton.disabled = true;
-  showFormMessage(messageElement, "Отправляем…", "");
-
-  try {
-    const response = await fetch("/tickets", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-      body: formData,
-    });
-    const payload = await response.json();
-
-    if (!response.ok) {
-      let detail = payload.detail || "Не удалось создать тикет";
-      if (Array.isArray(detail)) {
-        detail = detail.map((item) => item.msg || JSON.stringify(item)).join("; ");
-      }
-      showFormMessage(messageElement, detail, "error");
-      return;
-    }
-
-    // Back to list after create
-    window.location.href = "/tickets";
-  } catch {
-    showFormMessage(messageElement, "Сервер недоступен", "error");
-  } finally {
-    if (submitButton) submitButton.disabled = false;
-  }
-}
-
 async function initMyTicketsPage() {
   if (!requireClientSession()) return;
   fillClientProfile();
   initLogoutButton();
-  initTicketModal();
+  initCreateTicketModal();
+  initDetailModal();
+  initModalKeyboard();
   await renderMyTicketsList();
 }
 
-async function initNewTicketPage() {
-  if (!requireClientSession()) return;
-  initLogoutButton();
-  initPhotoHint();
-
-  try {
-    await loadProblemReasons();
-  } catch {
-    showFormMessage(
-      document.getElementById("ticket-message"),
-      "Не удалось загрузить категории",
-      "error",
-    );
-  }
-
-  const form = document.getElementById("new-ticket-form");
-  if (form) {
-    form.addEventListener("submit", submitNewTicketForm);
-  }
-}
-
 document.addEventListener("DOMContentLoaded", () => {
-  const pageName = document.body.dataset.page;
-  if (pageName === "my-tickets") initMyTicketsPage();
-  if (pageName === "new-ticket") initNewTicketPage();
+  if (document.body.dataset.page === "my-tickets") {
+    initMyTicketsPage();
+  }
 });

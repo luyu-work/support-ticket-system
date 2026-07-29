@@ -42,5 +42,6 @@ def open_my_tickets_page() -> FileResponse:
 
 
 @pages_router.get("/tickets/new")
-def open_new_ticket_page() -> FileResponse:
-    return _page_file("new_ticket.html")
+def redirect_new_ticket_to_list() -> RedirectResponse:
+    """Create form is a modal on /tickets; keep old URL for bookmarks."""
+    return RedirectResponse(url="/tickets", status_code=302)

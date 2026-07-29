@@ -126,8 +126,7 @@ Authorization: Bearer <access_token>
 | `/` | редирект → `/login` |
 | `/login` | форма входа |
 | `/register` | регистрация client |
-| `/tickets` | «Мои тикеты» (client) |
-| `/tickets/new` | «Обратная связь» — создание тикета |
+| `/tickets` | «Мои тикеты» + модалка «Новый тикет» (client) |
 | `/home` | заглушка (agent / admin) |
 
 После `python start_project.py` откройте: http://127.0.0.1:8000/login  

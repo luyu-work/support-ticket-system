@@ -44,12 +44,12 @@
       <section class="client-main-card">
         <div class="client-main-title">
           <h1>Мои тикеты</h1>
-          <a href="/tickets/new" class="btn-feedback">
+          <button type="button" id="open-create-ticket-button" class="btn-feedback">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
               <path d="M4 8H8M8 8H12M8 8V12M8 8V4" stroke="#F1F5FF" stroke-linecap="round" stroke-linejoin="round" />
             </svg>
             <span>Обратная связь</span>
-          </a>
+          </button>
         </div>
 
         <div id="my-tickets-list" class="client-ticket-list">
@@ -58,19 +58,97 @@
       </section>
     </div>
 
-    <div id="ticket-modal" class="ticket-modal" hidden>
-      <div class="ticket-modal-backdrop" data-close-modal></div>
-      <div class="ticket-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="ticket-modal-title">
+    <!-- Detail stub modal -->
+    <div id="ticket-detail-modal" class="ticket-modal" hidden>
+      <div class="ticket-modal-backdrop" data-close-detail-modal></div>
+      <div class="ticket-modal-dialog ticket-modal-dialog--narrow" role="dialog" aria-modal="true" aria-labelledby="ticket-detail-title">
         <div class="ticket-modal-header">
-          <h2 id="ticket-modal-title">Тикет</h2>
-          <button type="button" class="icon-button" data-close-modal aria-label="Закрыть">×</button>
+          <h2 id="ticket-detail-title">Тикет</h2>
+          <button type="button" class="icon-button" data-close-detail-modal aria-label="Закрыть">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 12L8.00001 8.00001M8.00001 8.00001L4 4M8.00001 8.00001L12 4M8.00001 8.00001L4 12" stroke="#333333" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
         </div>
         <div class="ticket-modal-body">
           <p class="muted-text">
             Модальное окно-заглушка. Макет детального просмотра появится позже.
           </p>
-          <p id="ticket-modal-summary" class="ticket-modal-summary"></p>
+          <p id="ticket-detail-summary" class="ticket-modal-summary"></p>
         </div>
+      </div>
+    </div>
+
+    <!-- Create ticket modal -->
+    <div id="create-ticket-modal" class="ticket-modal" hidden>
+      <div class="ticket-modal-backdrop" data-close-create-modal></div>
+      <div
+        class="ticket-modal-dialog ticket-modal-dialog--wide"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="create-ticket-title"
+      >
+        <div class="ticket-modal-header">
+          <h2 id="create-ticket-title">Новый тикет</h2>
+          <button type="button" class="icon-button" data-close-create-modal aria-label="Закрыть">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+              <path d="M12 12L8.00001 8.00001M8.00001 8.00001L4 4M8.00001 8.00001L12 4M8.00001 8.00001L4 12" stroke="#333333" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <form id="create-ticket-form" class="create-ticket-form" novalidate>
+          <div class="field">
+            <label for="problem_reason" class="field-label">
+              Причина<span class="required-mark">*</span>
+            </label>
+            <div class="input-shell select-shell">
+              <select id="problem_reason" name="problem_reason" required>
+                <option value="" disabled selected>Выберите причину</option>
+              </select>
+              <svg class="select-chevron" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M15.8333 7.5L10 13.3333L4.16666 7.5" stroke="#151515" stroke-opacity="0.6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
+            </div>
+          </div>
+
+          <div class="field field--description">
+            <label for="description" class="field-label">
+              Описание<span class="required-mark">*</span>
+            </label>
+            <div class="input-shell textarea-shell">
+              <textarea
+                id="description"
+                name="description"
+                rows="4"
+                placeholder="Опишите, что произошло..."
+                required
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Фотографии (необязательно, до 10 шт.)</div>
+            <div id="photo-preview-list" class="photo-preview-list">
+              <button type="button" id="add-photo-button" class="photo-add-tile" aria-label="Добавить фото">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                  <path d="M8 16H16M16 16H24M16 16V24M16 16V8" stroke="#151515" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+            </div>
+            <input
+              id="photos-input"
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              multiple
+              hidden
+            />
+          </div>
+
+          <p id="create-ticket-message" class="auth-message" aria-live="polite"></p>
+
+          <button class="btn-submit-ticket" type="submit">Отправить тикет</button>
+        </form>
       </div>
     </div>
 
