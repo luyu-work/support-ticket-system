@@ -5,9 +5,12 @@ Tests use an in-memory SQLite DB so they run without Docker/PostgreSQL.
 """
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import StaticPool, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
+from app.core.database import get_database_session
+from app.main import ticket_system_application
 from app.models import DatabaseModelBase
 
 
@@ -29,3 +32,21 @@ def database_session() -> Session:
         session.close()
         DatabaseModelBase.metadata.drop_all(bind=test_engine)
         test_engine.dispose()
+
+
+@pytest.fixture()
+def api_test_client(database_session: Session) -> TestClient:
+    """HTTP client with the same in-memory DB as database_session."""
+
+    def override_get_database_session():
+        try:
+            yield database_session
+        finally:
+            pass
+
+    ticket_system_application.dependency_overrides[get_database_session] = (
+        override_get_database_session
+    )
+    with TestClient(ticket_system_application) as test_client:
+        yield test_client
+    ticket_system_application.dependency_overrides.clear()

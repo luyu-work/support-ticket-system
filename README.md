@@ -71,7 +71,36 @@ python start_project.py
 - Docs: http://127.0.0.1:8000/docs  
 - Health: http://127.0.0.1:8000/health  
 
-### 4. Tests
+### 4. Auth (v.0.3.0)
+
+| Method | Path | Who |
+|--------|------|-----|
+| POST | `/auth/register` | new client (email, full_name, password) |
+| POST | `/auth/login` | client / agent / admin |
+| GET | `/auth/me` | any logged-in user (Bearer token) |
+
+Default staff (created on API startup if missing):
+
+| Role | Email | Password |
+|------|--------|----------|
+| admin | `admin@example.com` | `AdminChangeMe123` |
+| agent | `agent@example.com` | `AgentChangeMe123` |
+
+Change them in `.env` (`SEED_ADMIN_*`, `SEED_AGENT_*`).
+
+Example register body:
+
+```json
+{
+  "email": "client@example.com",
+  "full_name": "Иван Иванов",
+  "password": "ClientPass123"
+}
+```
+
+Use `Authorization: Bearer <access_token>` for protected routes.
+
+### 5. Tests
 
 ```bash
 pytest

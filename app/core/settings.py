@@ -26,6 +26,15 @@ class ApplicationSettings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 60
 
+    # Default staff accounts (created once on API startup if missing)
+    seed_staff_on_startup: bool = True
+    seed_admin_email: str = "admin@example.com"
+    seed_admin_password: str = "AdminChangeMe123"
+    seed_admin_full_name: str = "System Administrator"
+    seed_agent_email: str = "agent@example.com"
+    seed_agent_password: str = "AgentChangeMe123"
+    seed_agent_full_name: str = "Support Agent"
+
     log_level: str = "INFO"
 
     @property

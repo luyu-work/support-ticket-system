@@ -1,12 +1,8 @@
 from fastapi.testclient import TestClient
 
-from app.main import ticket_system_application
 
-test_client = TestClient(ticket_system_application)
-
-
-def test_health_endpoint_returns_ok() -> None:
-    response = test_client.get("/health")
+def test_health_endpoint_returns_ok(api_test_client: TestClient) -> None:
+    response = api_test_client.get("/health")
 
     assert response.status_code == 200
     payload = response.json()
