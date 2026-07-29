@@ -30,7 +30,7 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 40px 16px;
+  padding: 0;
 }
 
 /* ----- Auth form shell (login / register) ----- */
@@ -42,6 +42,9 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 40px;
+  /* page-level inset lives here, not on body */
+  margin: 40px 16px;
+  box-sizing: border-box;
 }
 
 .auth-logo {
@@ -141,32 +144,6 @@ body {
   color: var(--text-40);
 }
 
-.password-toggle {
-  flex-shrink: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  color: rgba(21, 21, 21, 0.4);
-}
-
-.password-toggle svg {
-  display: block;
-}
-
-.password-toggle svg path {
-  stroke: currentColor;
-}
-
-.password-toggle:hover {
-  color: #151515;
-}
-
 .auth-message {
   margin: 4px 0 0;
   min-height: 1.25rem;
@@ -264,6 +241,8 @@ body {
   align-items: flex-start;
   gap: 24px;
   padding: 32px;
+  margin: 40px 16px;
+  box-sizing: border-box;
   border-radius: 16px;
   border: 1px solid var(--border-10);
   background: #fff;

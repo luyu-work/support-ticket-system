@@ -4,7 +4,6 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { BrandLogo } from "@/components/ui/BrandLogo";
-import { PasswordEyeIcon } from "@/components/ui/PasswordEyeIcon";
 import { ApiError, registerClient } from "@/lib/api";
 import { getPostLoginPath, saveAuthSession } from "@/lib/auth-storage";
 
@@ -13,7 +12,6 @@ export default function RegisterPage() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"error" | "success" | "">("");
   const [loading, setLoading] = useState(false);
@@ -91,22 +89,14 @@ export default function RegisterPage() {
               <input
                 id="password"
                 name="password"
-                type={showPassword ? "text" : "password"}
+                type="password"
                 autoComplete="new-password"
-                placeholder="********"
+                placeholder="••••••••"
                 minLength={8}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-              <button
-                type="button"
-                className="password-toggle"
-                aria-label={showPassword ? "Скрыть пароль" : "Показать пароль"}
-                onClick={() => setShowPassword((v) => !v)}
-              >
-                <PasswordEyeIcon />
-              </button>
             </div>
           </div>
 
