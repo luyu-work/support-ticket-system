@@ -490,6 +490,12 @@ body.modal-open::-webkit-scrollbar {
   align-self: stretch;
 }
 
+/* display:flex overrides native [hidden] — force hide when no photos */
+.ticket-detail-field[hidden],
+#ticket-detail-photos-field[hidden] {
+  display: none !important;
+}
+
 .ticket-detail-field:last-child {
   gap: 4px;
 }

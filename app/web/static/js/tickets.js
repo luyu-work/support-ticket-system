@@ -202,13 +202,13 @@ async function renderTicketDetailPhotos(ticket) {
   const photosList = document.getElementById("ticket-detail-photos");
   if (!photosField || !photosList) return;
 
+  // Always hide first so a previous ticket with photos cannot leave the label visible
+  photosField.hidden = true;
   revokeDetailPhotoObjectUrls();
   photosList.innerHTML = "";
 
   const attachments = ticket.attachments || [];
   if (!attachments.length) {
-    // No photos → hide whole block including "Фотографии" label
-    photosField.hidden = true;
     return;
   }
 
@@ -243,7 +243,7 @@ async function renderTicketDetailPhotos(ticket) {
     }
   }
 
-  // Show label only if at least one photo actually loaded
+  // Show "Фотографии" only when at least one image is on screen
   photosField.hidden = loadedPhotoCount === 0;
 }
 
