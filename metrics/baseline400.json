@@ -1,0 +1,103 @@
+{
+  "label": "baseline400",
+  "measured_at": "2026-07-29T19:33:13.196027+00:00",
+  "tickets": 400,
+  "profile": "naive",
+  "code_size": {
+    "python_app": {
+      "files": 33,
+      "lines": 2886
+    },
+    "python_tests": {
+      "files": 11,
+      "lines": 1197
+    },
+    "frontend_ts": {
+      "files": 28,
+      "lines": 3789
+    },
+    "frontend_css": {
+      "files": 5,
+      "lines": 2555
+    },
+    "python_total_lines": {
+      "files": 44,
+      "lines": 4083
+    }
+  },
+  "pytest": {
+    "exit_code": null,
+    "duration_ms": null,
+    "passed": null,
+    "failed": null,
+    "summary_line": "skipped"
+  },
+  "api_bench": {
+    "seed_tickets": 400,
+    "ticket_count": 400,
+    "comment_count": 800,
+    "profile": "naive",
+    "bench_rounds": 25,
+    "endpoints": {
+      "health": {
+        "path": "/health",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 1.085,
+        "p50_ms": 1.103,
+        "p95_ms": 1.148,
+        "min_ms": 0.956,
+        "max_ms": 1.257
+      },
+      "pool": {
+        "path": "/tickets/pool",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 12.882,
+        "p50_ms": 11.42,
+        "p95_ms": 12.351,
+        "min_ms": 10.771,
+        "max_ms": 45.249
+      },
+      "archive": {
+        "path": "/tickets/archive",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 2.697,
+        "p50_ms": 2.718,
+        "p95_ms": 3.066,
+        "min_ms": 2.336,
+        "max_ms": 3.158
+      },
+      "problem_reasons": {
+        "path": "/tickets/problem-reasons",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 1.102,
+        "p50_ms": 1.077,
+        "p95_ms": 1.254,
+        "min_ms": 0.942,
+        "max_ms": 1.549
+      },
+      "my_tickets": {
+        "path": "/tickets/my",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 40.81,
+        "p50_ms": 28.049,
+        "p95_ms": 69.737,
+        "min_ms": 24.244,
+        "max_ms": 109.049
+      }
+    },
+    "notes": {
+      "my_tickets": "Measured list+serialize path: WITH comments (naive)",
+      "pool": "Promote cooldown OFF (naive)"
+    }
+  }
+}

@@ -1,0 +1,94 @@
+{
+  "label": "after",
+  "measured_at": "2026-07-29T19:12:51.838875+00:00",
+  "code_size": {
+    "python_app": {
+      "files": 33,
+      "lines": 2886
+    },
+    "python_tests": {
+      "files": 11,
+      "lines": 1197
+    },
+    "frontend_ts": {
+      "files": 27,
+      "lines": 3382
+    },
+    "frontend_css": {
+      "files": 4,
+      "lines": 2105
+    },
+    "python_total_lines": {
+      "files": 44,
+      "lines": 4083
+    }
+  },
+  "pytest": {
+    "exit_code": 0,
+    "duration_ms": 30227.19,
+    "passed": 50,
+    "failed": 0,
+    "summary_line": "\u001b[33m\u001b[32m50 passed\u001b[0m, \u001b[33m\u001b[1m41 warnings\u001b[0m\u001b[33m in 28.93s\u001b[0m\u001b[0m"
+  },
+  "api_bench": {
+    "seed_tickets": 80,
+    "ticket_count": 80,
+    "endpoints": {
+      "health": {
+        "path": "/health",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 1.388,
+        "p50_ms": 1.221,
+        "p95_ms": 1.844,
+        "min_ms": 1.109,
+        "max_ms": 2.877
+      },
+      "pool": {
+        "path": "/tickets/pool",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 6.682,
+        "p50_ms": 6.483,
+        "p95_ms": 7.311,
+        "min_ms": 5.816,
+        "max_ms": 9.093
+      },
+      "archive": {
+        "path": "/tickets/archive",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 3.837,
+        "p50_ms": 3.864,
+        "p95_ms": 4.174,
+        "min_ms": 3.291,
+        "max_ms": 4.265
+      },
+      "my_tickets": {
+        "path": "/tickets/my",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 7.74,
+        "p50_ms": 6.302,
+        "p95_ms": 6.788,
+        "min_ms": 5.787,
+        "max_ms": 42.628
+      },
+      "problem_reasons": {
+        "path": "/tickets/problem-reasons",
+        "method": "GET",
+        "status": 200,
+        "rounds": 25,
+        "avg_ms": 1.234,
+        "p50_ms": 1.193,
+        "p95_ms": 1.43,
+        "min_ms": 1.087,
+        "max_ms": 1.464
+      }
+    }
+  }
+}

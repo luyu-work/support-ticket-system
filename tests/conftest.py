@@ -14,6 +14,15 @@ from app.main import ticket_system_application
 from app.models import DatabaseModelBase
 
 
+@pytest.fixture(autouse=True)
+def _reset_ticket_service_cooldowns() -> None:
+    """Isolate process-wide cooldowns between tests."""
+    from app.services.support_ticket_service import reset_promote_cooldown_for_tests
+
+    reset_promote_cooldown_for_tests()
+    yield
+
+
 @pytest.fixture()
 def database_session() -> Session:
     """Fresh empty DB for each test, closed afterwards."""

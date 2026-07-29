@@ -1,10 +1,11 @@
 """Create and read support tickets."""
 
 import logging
+import time
 from datetime import UTC, datetime, timedelta
 
 from fastapi import UploadFile
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session, selectinload
 
 from app.core.settings import ApplicationSettings, get_application_settings
@@ -64,6 +65,7 @@ def _record_ticket_activity(
     event_type: TicketActivityEventType,
     actor_user_id: int | None = None,
     details: str | None = None,
+    log_level: int = logging.INFO,
 ) -> None:
     """Append one lifecycle event (not committed by itself)."""
     database_session.add(
@@ -74,12 +76,24 @@ def _record_ticket_activity(
             details=details,
         )
     )
-    logger.info(
+    logger.log(
+        log_level,
         "Ticket activity | ticket_id=%s event=%s actor_id=%s",
         support_ticket_id,
         event_type.value,
         actor_user_id,
     )
+
+
+# Avoid re-scanning the whole queue on every pool/claim within a short window
+_PROMOTE_COOLDOWN_SECONDS = 30.0
+_last_promote_monotonic: float = 0.0
+
+
+def reset_promote_cooldown_for_tests() -> None:
+    """pytest: each test starts with a fresh promote window."""
+    global _last_promote_monotonic
+    _last_promote_monotonic = 0.0
 
 
 def create_support_ticket_for_client(
@@ -163,7 +177,11 @@ def list_tickets_for_client(
     *,
     client_account: UserAccount,
 ) -> tuple[list[SupportTicket], int]:
-    """All tickets of the client (no pagination)."""
+    """
+    All tickets of the client (no pagination).
+
+    List view only needs ticket + photo count/preview — comments load on detail.
+    """
     base_filter = SupportTicket.client_author_id == client_account.user_account_id
     total_ticket_count = database_session.scalar(
         select(func.count()).select_from(SupportTicket).where(base_filter)
@@ -172,10 +190,7 @@ def list_tickets_for_client(
     tickets = list(
         database_session.scalars(
             select(SupportTicket)
-            .options(
-                selectinload(SupportTicket.attachments),
-                selectinload(SupportTicket.comments).selectinload(TicketComment.comment_author),
-            )
+            .options(selectinload(SupportTicket.attachments))
             .where(base_filter)
             .order_by(SupportTicket.created_at.desc())
         ).all()
@@ -183,32 +198,54 @@ def list_tickets_for_client(
     return tickets, total_ticket_count
 
 
-def promote_stale_queue_tickets_to_important(database_session: Session) -> int:
+def promote_stale_queue_tickets_to_important(
+    database_session: Session,
+    *,
+    force: bool = False,
+) -> int:
     """
     Tickets still in queue longer than IMPORTANT_AFTER_HOURS become "important".
+
+    Uses a short cooldown so GET /pool under load does not re-scan every time.
     Returns how many rows were updated.
     """
+    global _last_promote_monotonic
+
+    now = time.monotonic()
+    if not force and (now - _last_promote_monotonic) < _PROMOTE_COOLDOWN_SECONDS:
+        return 0
+
     threshold = datetime.now(UTC) - timedelta(hours=IMPORTANT_AFTER_HOURS)
-    stale_tickets = list(
+    stale_ids = list(
         database_session.scalars(
-            select(SupportTicket).where(
+            select(SupportTicket.support_ticket_id).where(
                 SupportTicket.status == TicketStatus.IN_QUEUE,
                 SupportTicket.created_at <= threshold,
             )
         ).all()
     )
-    for ticket in stale_tickets:
-        ticket.status = TicketStatus.IMPORTANT
+    _last_promote_monotonic = now
+    if not stale_ids:
+        return 0
+
+    database_session.execute(
+        update(SupportTicket)
+        .where(SupportTicket.support_ticket_id.in_(stale_ids))
+        .values(status=TicketStatus.IMPORTANT)
+    )
+    details = f"Более {IMPORTANT_AFTER_HOURS} ч. в очереди"
+    for ticket_id in stale_ids:
         _record_ticket_activity(
             database_session,
-            support_ticket_id=ticket.support_ticket_id,
+            support_ticket_id=ticket_id,
             event_type=TicketActivityEventType.MARKED_IMPORTANT,
             actor_user_id=None,
-            details=f"Более {IMPORTANT_AFTER_HOURS} ч. в очереди",
+            details=details,
+            log_level=logging.DEBUG,
         )
-    if stale_tickets:
-        database_session.commit()
-    return len(stale_tickets)
+    database_session.commit()
+    logger.info("Promoted %s stale ticket(s) to important", len(stale_ids))
+    return len(stale_ids)
 
 
 def list_common_ticket_pool(

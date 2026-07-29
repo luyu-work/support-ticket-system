@@ -106,34 +106,50 @@ ACTIVITY_EVENT_LABELS_RU: dict[str, str] = {
 }
 
 
+_PROBLEM_REASON_OPTIONS_CACHE: list[TicketProblemReasonOption] | None = None
+
+
 def list_problem_reason_options() -> list[TicketProblemReasonOption]:
-    return [
-        TicketProblemReasonOption(value=reason.value, label_ru=PROBLEM_REASON_LABELS_RU[reason.value])
-        for reason in TicketProblemReason
-    ]
+    """Static catalog — cache once (metric: problem_reasons latency)."""
+    global _PROBLEM_REASON_OPTIONS_CACHE
+    if _PROBLEM_REASON_OPTIONS_CACHE is None:
+        _PROBLEM_REASON_OPTIONS_CACHE = [
+            TicketProblemReasonOption(
+                value=reason.value,
+                label_ru=PROBLEM_REASON_LABELS_RU[reason.value],
+            )
+            for reason in TicketProblemReason
+        ]
+    return _PROBLEM_REASON_OPTIONS_CACHE
 
 
 def to_support_ticket_response(
     ticket: Any,
     *,
     include_activity_log: bool = True,
+    include_comments: bool = True,
 ) -> SupportTicketResponse:
     """Map ORM ticket (+ comments, activity) to API response with Russian labels.
 
     Activity log is for agent/admin only — pass include_activity_log=False for clients.
+    Comments can be skipped on list endpoints (loaded on detail).
     """
     comments: list[TicketCommentResponse] = []
-    for comment in sorted(getattr(ticket, "comments", None) or [], key=lambda item: item.created_at):
-        author = getattr(comment, "comment_author", None)
-        comments.append(
-            TicketCommentResponse(
-                ticket_comment_id=comment.ticket_comment_id,
-                comment_text=comment.comment_text,
-                author_user_id=comment.author_user_id,
-                author_full_name=author.full_name if author is not None else None,
-                created_at=comment.created_at,
+    if include_comments:
+        for comment in sorted(
+            getattr(ticket, "comments", None) or [],
+            key=lambda item: item.created_at,
+        ):
+            author = getattr(comment, "comment_author", None)
+            comments.append(
+                TicketCommentResponse(
+                    ticket_comment_id=comment.ticket_comment_id,
+                    comment_text=comment.comment_text,
+                    author_user_id=comment.author_user_id,
+                    author_full_name=author.full_name if author is not None else None,
+                    created_at=comment.created_at,
+                )
             )
-        )
 
     activity_log: list[TicketActivityEventResponse] = []
     if include_activity_log:

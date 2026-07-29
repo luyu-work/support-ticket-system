@@ -126,7 +126,11 @@ def list_my_support_tickets(
     )
     return SupportTicketListResponse(
         items=[
-            to_support_ticket_response(ticket, include_activity_log=False)
+            to_support_ticket_response(
+                ticket,
+                include_activity_log=False,
+                include_comments=False,
+            )
             for ticket in tickets
         ],
         total_ticket_count=total_ticket_count,

@@ -1,0 +1,450 @@
+/* Metrics report page (public /metrics) */
+
+.metrics-page {
+  min-height: 100vh;
+  background: var(--page-bg);
+  color: var(--text);
+  font-family: var(--font);
+  padding: 40px 24px 64px;
+}
+
+.metrics-inner {
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+.metrics-header {
+  margin-bottom: 28px;
+}
+
+.metrics-eyebrow {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--accent);
+  letter-spacing: 0.02em;
+  margin-bottom: 8px;
+}
+
+.metrics-header h1 {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 8px;
+}
+
+.metrics-subtitle {
+  margin: 0;
+  font-size: 15px;
+  color: var(--text-60);
+  line-height: 1.5;
+}
+
+.metrics-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 16px;
+  font-size: 13px;
+  color: var(--text-40);
+}
+
+.metrics-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metrics-meta strong {
+  color: var(--text-60);
+  font-weight: 500;
+}
+
+.metrics-env-note {
+  margin: 12px 0 0;
+  font-size: 13px;
+  color: var(--text-60);
+  line-height: 1.45;
+  max-width: 720px;
+}
+
+.metrics-prose {
+  margin: 0 0 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text);
+}
+
+.metrics-prose:last-child {
+  margin-bottom: 0;
+}
+
+.metrics-prose-emphasis {
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.metrics-story .metrics-prose + .metrics-prose {
+  color: var(--text);
+}
+
+.metrics-summary-box {
+  background: linear-gradient(180deg, #fff 0%, #f3f6ff 100%);
+  border-color: var(--accent-10);
+}
+
+.metrics-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.metrics-step {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.metrics-step-n {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--button-text);
+  font-size: 13px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.metrics-step-title {
+  margin: 2px 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.metrics-step-text {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-60);
+  line-height: 1.5;
+}
+
+.metrics-endpoint-what {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--text-60);
+  line-height: 1.4;
+  font-weight: 400;
+  max-width: 260px;
+}
+
+.metrics-verdict {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  margin-bottom: 4px;
+}
+
+.metrics-change-block {
+  margin-top: 10px;
+}
+
+.metrics-change-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--accent);
+  margin-bottom: 3px;
+}
+
+.metrics-glossary {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metrics-glossary-item {
+  padding: 12px 14px;
+  background: var(--page-bg);
+  border-radius: 12px;
+}
+
+.metrics-glossary-item dt {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--text);
+}
+
+.metrics-glossary-item dd {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-60);
+  line-height: 1.5;
+}
+
+.metrics-section-lead-after {
+  margin-top: 18px;
+}
+
+.metrics-table-compact td,
+.metrics-table-compact th {
+  font-size: 12px;
+}
+
+.metrics-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 28px;
+}
+
+@media (max-width: 720px) {
+  .metrics-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+.metrics-card {
+  background: #fff;
+  border: 1px solid var(--border-10);
+  border-radius: var(--radius-card);
+  padding: 18px 20px;
+}
+
+.metrics-card-label {
+  font-size: 13px;
+  color: var(--text-60);
+  margin-bottom: 6px;
+}
+
+.metrics-card-value {
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.metrics-card-value.is-good {
+  color: var(--success);
+}
+
+.metrics-card-value.is-neutral {
+  color: var(--text);
+}
+
+.metrics-card-value.is-warn {
+  color: #b8860b;
+}
+
+.metrics-card-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--text-40);
+  line-height: 1.4;
+}
+
+.metrics-section {
+  background: #fff;
+  border: 1px solid var(--border-10);
+  border-radius: var(--radius-card);
+  padding: 22px 24px 20px;
+  margin-bottom: 16px;
+}
+
+.metrics-section h2 {
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 4px;
+}
+
+.metrics-section-lead {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-60);
+  line-height: 1.45;
+}
+
+.metrics-table-wrap {
+  overflow-x: auto;
+  margin: 0 -4px;
+}
+
+.metrics-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  min-width: 640px;
+}
+
+.metrics-table th {
+  text-align: left;
+  font-weight: 500;
+  color: var(--text-40);
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--border-10);
+  white-space: nowrap;
+}
+
+.metrics-table th.num,
+.metrics-table td.num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border-10);
+  vertical-align: top;
+}
+
+.metrics-table tr:last-child td {
+  border-bottom: none;
+}
+
+.metrics-endpoint-name {
+  font-weight: 500;
+  color: var(--text);
+}
+
+.metrics-endpoint-path {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--text-40);
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+}
+
+.metrics-delta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.metrics-delta.is-good {
+  color: var(--success);
+}
+
+.metrics-delta.is-bad {
+  color: var(--danger);
+}
+
+.metrics-delta.is-flat {
+  color: var(--text-40);
+  font-weight: 500;
+}
+
+.metrics-note-cell {
+  color: var(--text-60);
+  font-size: 12px;
+  line-height: 1.4;
+  max-width: 220px;
+}
+
+.metrics-changes {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.metrics-change {
+  padding: 14px 16px;
+  background: var(--page-bg);
+  border-radius: 12px;
+  border: 1px solid transparent;
+}
+
+.metrics-change-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.metrics-change-detail {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-60);
+  line-height: 1.45;
+}
+
+.metrics-change-files {
+  margin-top: 8px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.metrics-file-chip {
+  font-size: 11px;
+  font-family: ui-monospace, "Cascadia Code", Consolas, monospace;
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--accent-10);
+  color: var(--accent);
+}
+
+.metrics-takeaways {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.55;
+}
+
+.metrics-takeaways li {
+  margin-bottom: 8px;
+}
+
+.metrics-takeaways li:last-child {
+  margin-bottom: 0;
+}
+
+.metrics-footer {
+  margin-top: 24px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 13px;
+  color: var(--text-40);
+}
+
+.metrics-footer a {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.metrics-footer a:hover {
+  text-decoration: underline;
+}
+
+.metrics-loading,
+.metrics-error {
+  max-width: 480px;
+  margin: 80px auto;
+  text-align: center;
+  color: var(--text-60);
+  font-size: 15px;
+}
+
+.metrics-error {
+  color: var(--danger);
+}
