@@ -10,11 +10,10 @@ if TYPE_CHECKING:
     from app.models.support_ticket import SupportTicket
     from app.models.user_account import UserAccount
 
-
 class TicketComment(DatabaseModelBase):
     """
-    Comment on a ticket (usually from an agent).
-    Table name: ticket_comments
+    Комментарий к тикету (обычно от агента).
+    Таблица: ticket_comments
     """
 
     __tablename__ = "ticket_comments"

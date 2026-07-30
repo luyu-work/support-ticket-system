@@ -1,1 +1,1 @@
-"""Pydantic schemas (request/response bodies). Filled in later steps."""
+"""Pydantic-схемы: тела запросов и ответов."""

@@ -1,4 +1,4 @@
-"""Save ticket photos to local disk."""
+"""Сохраняет фото тикетов на диск."""
 
 import re
 import uuid
@@ -17,24 +17,20 @@ ALLOWED_PHOTO_CONTENT_TYPES = {
     "image/gif",
 }
 
-
 class TooManyTicketPhotosError(Exception):
     def __init__(self, photo_count: int) -> None:
         self.photo_count = photo_count
         super().__init__(f"Too many photos: {photo_count}")
-
 
 class InvalidTicketPhotoError(Exception):
     def __init__(self, detail: str) -> None:
         self.detail = detail
         super().__init__(detail)
 
-
 def _safe_file_name(original_file_name: str) -> str:
     cleaned = Path(original_file_name).name
     cleaned = re.sub(r"[^\w.\-]+", "_", cleaned, flags=re.UNICODE)
     return cleaned[:180] or "photo.bin"
-
 
 def get_ticket_uploads_root(settings: ApplicationSettings | None = None) -> Path:
     application_settings = settings or get_application_settings()
@@ -44,12 +40,11 @@ def get_ticket_uploads_root(settings: ApplicationSettings | None = None) -> Path
     uploads_root.mkdir(parents=True, exist_ok=True)
     return uploads_root
 
-
 def validate_ticket_photos(
     photo_files: list[UploadFile],
     settings: ApplicationSettings | None = None,
 ) -> None:
-    del settings  # reserved for future size/type limits from settings
+    del settings
     if len(photo_files) > MAX_ATTACHMENTS_PER_TICKET:
         raise TooManyTicketPhotosError(len(photo_files))
 
@@ -60,7 +55,6 @@ def validate_ticket_photos(
                 f"File type not allowed: {photo_file.filename or 'unknown'}"
             )
 
-
 def save_ticket_photo_to_disk(
     *,
     support_ticket_id: int,
@@ -68,7 +62,7 @@ def save_ticket_photo_to_disk(
     settings: ApplicationSettings | None = None,
 ) -> tuple[str, str]:
     """
-    Save one photo. Returns (storage_path relative string, original_file_name).
+    Сохраняет одно фото. Возвращает (относительный путь, исходное имя файла).
     """
     application_settings = settings or get_application_settings()
     original_file_name = photo_file.filename or "photo.bin"
@@ -95,7 +89,6 @@ def save_ticket_photo_to_disk(
                 )
             output_file.write(chunk)
 
-    # Store path relative to project for portability
     relative_storage_path = str(
         Path(application_settings.ticket_uploads_directory) / str(support_ticket_id) / unique_name
     ).replace("\\", "/")

@@ -1,4 +1,4 @@
-"""Request/response bodies for support tickets."""
+"""Тела запросов/ответов для тикетов."""
 
 from datetime import datetime
 from typing import Any
@@ -6,7 +6,6 @@ from typing import Any
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import TicketActivityEventType, TicketProblemReason, TicketStatus
-
 
 class TicketAttachmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -16,14 +15,12 @@ class TicketAttachmentResponse(BaseModel):
     storage_path: str
     uploaded_at: datetime
 
-
 class TicketCommentResponse(BaseModel):
     ticket_comment_id: int
     comment_text: str
     author_user_id: int
     author_full_name: str | None = None
     created_at: datetime
-
 
 class TicketActivityEventResponse(BaseModel):
     ticket_activity_id: int
@@ -33,7 +30,6 @@ class TicketActivityEventResponse(BaseModel):
     actor_full_name: str | None = None
     details: str | None = None
     created_at: datetime
-
 
 class SupportTicketResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
@@ -52,17 +48,14 @@ class SupportTicketResponse(BaseModel):
     comments: list[TicketCommentResponse] = Field(default_factory=list)
     activity_log: list[TicketActivityEventResponse] = Field(default_factory=list)
 
-
 class SupportTicketListResponse(BaseModel):
     items: list[SupportTicketResponse]
     total_ticket_count: int
 
-
 class PoolTicketAssignee(BaseModel):
     user_account_id: int
     full_name: str
-    agent_badge: str  # e.g. "Агент #001"
-
+    agent_badge: str
 
 class PoolTicketItem(BaseModel):
     support_ticket_id: int
@@ -72,22 +65,18 @@ class PoolTicketItem(BaseModel):
     problem_reason_label: str
     assigned_agent: PoolTicketAssignee | None = None
 
-
 class TicketPoolListResponse(BaseModel):
     items: list[PoolTicketItem]
     total_ticket_count: int
 
-
 class CloseTicketRequest(BaseModel):
-    """Agent must leave a short outcome comment when closing a ticket."""
+    """При закрытии агент обязан коротко написать итог."""
 
     comment_text: str = Field(min_length=1, max_length=4000)
-
 
 class TicketProblemReasonOption(BaseModel):
     value: str
     label_ru: str
-
 
 PROBLEM_REASON_LABELS_RU: dict[str, str] = {
     TicketProblemReason.BUG_REPORT.value: "Баги",
@@ -105,12 +94,10 @@ ACTIVITY_EVENT_LABELS_RU: dict[str, str] = {
     TicketActivityEventType.TRANSFERRED_TO_ENGINEERS.value: "Передан инженерам",
 }
 
-
 _PROBLEM_REASON_OPTIONS_CACHE: list[TicketProblemReasonOption] | None = None
 
-
 def list_problem_reason_options() -> list[TicketProblemReasonOption]:
-    """Static catalog — cache once (metric: problem_reasons latency)."""
+    """Статический список причин — можно один раз закешировать."""
     global _PROBLEM_REASON_OPTIONS_CACHE
     if _PROBLEM_REASON_OPTIONS_CACHE is None:
         _PROBLEM_REASON_OPTIONS_CACHE = [
@@ -122,17 +109,16 @@ def list_problem_reason_options() -> list[TicketProblemReasonOption]:
         ]
     return _PROBLEM_REASON_OPTIONS_CACHE
 
-
 def to_support_ticket_response(
     ticket: Any,
     *,
     include_activity_log: bool = True,
     include_comments: bool = True,
 ) -> SupportTicketResponse:
-    """Map ORM ticket (+ comments, activity) to API response with Russian labels.
+    """ORM-тикет (+ комментарии, история) → ответ API с русскими подписями.
 
-    Activity log is for agent/admin only — pass include_activity_log=False for clients.
-    Comments can be skipped on list endpoints (loaded on detail).
+    Историю видят только агент/админ — клиенту include_activity_log=False.
+    В списках комментарии можно не грузить — они нужны на деталке.
     """
     comments: list[TicketCommentResponse] = []
     if include_comments:

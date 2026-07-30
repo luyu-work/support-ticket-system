@@ -1,17 +1,17 @@
 """
-Measure project metrics for before/after optimization comparisons.
+Замер метрик проекта: «до» и «после» оптимизаций.
 
-Usage (from project root):
+Из корня проекта:
   .\\.venv\\Scripts\\python.exe scripts\\measure_metrics.py --label baseline
   .\\.venv\\Scripts\\python.exe scripts\\measure_metrics.py --tickets 400 --profile naive --label baseline400 --skip-pytest
   .\\.venv\\Scripts\\python.exe scripts\\measure_metrics.py --tickets 400 --profile optimized --label after400 --skip-pytest
   .\\.venv\\Scripts\\python.exe scripts\\measure_metrics.py --compare --before baseline400 --after after400
 
-Profiles:
-  optimized — current product behavior (promote cooldown, list without comments)
-  naive     — old-style: no cooldown + list serializes all comments (N+1 load)
+Профили:
+  optimized — как сейчас в продукте (кулдаун promote, список без комментариев)
+  naive     — по-старому: без кулдауна, в списке все комментарии (тяжелее)
 
-Results: metrics/<label>.json
+Результат: metrics/<label>.json
 """
 
 from __future__ import annotations
@@ -33,20 +33,20 @@ from sqlalchemy.orm import Session, selectinload, sessionmaker
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from fastapi.testclient import TestClient  # noqa: E402
+from fastapi.testclient import TestClient
 
-from app.core.database import DatabaseModelBase, get_database_session  # noqa: E402
-from app.core.security import create_access_token, hash_plain_password  # noqa: E402
-from app.main import ticket_system_application  # noqa: E402
-from app.models import (  # noqa: E402
+from app.core.database import DatabaseModelBase, get_database_session
+from app.core.security import create_access_token, hash_plain_password
+from app.main import ticket_system_application
+from app.models import (
     SupportTicket,
     TicketComment,
     TicketStatus,
     UserAccount,
     UserRole,
 )
-from app.schemas.tickets import to_support_ticket_response  # noqa: E402
-from app.services import support_ticket_service as ticket_svc  # noqa: E402
+from app.schemas.tickets import to_support_ticket_response
+from app.services import support_ticket_service as ticket_svc
 
 METRICS_DIR = ROOT / "metrics"
 DEFAULT_SEED_TICKETS = 80
@@ -55,7 +55,6 @@ DEFAULT_BENCH_ROUNDS = 25
 SEED_TICKETS = DEFAULT_SEED_TICKETS
 BENCH_ROUNDS = DEFAULT_BENCH_ROUNDS
 PROFILE = "optimized"
-
 
 def count_source_lines() -> dict:
     groups = {
@@ -83,7 +82,6 @@ def count_source_lines() -> dict:
         "lines": out["python_app"]["lines"] + out["python_tests"]["lines"],
     }
     return out
-
 
 def run_pytest() -> dict:
     started = time.perf_counter()
@@ -117,7 +115,6 @@ def run_pytest() -> dict:
         ),
     }
 
-
 def _build_bench_session() -> Session:
     engine = create_engine(
         "sqlite+pysqlite:///:memory:",
@@ -127,7 +124,6 @@ def _build_bench_session() -> Session:
     DatabaseModelBase.metadata.create_all(bind=engine)
     factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
     return factory()
-
 
 def _seed_bench_data(session: Session) -> tuple[UserAccount, UserAccount, str, str]:
     client = UserAccount(
@@ -174,7 +170,6 @@ def _seed_bench_data(session: Session) -> tuple[UserAccount, UserAccount, str, s
         ticket.created_at = old_time
     session.commit()
 
-    # 2 comments per ticket → list-with-comments is realistically heavier
     comments: list[TicketComment] = []
     for ticket in tickets:
         for j in range(2):
@@ -196,7 +191,6 @@ def _seed_bench_data(session: Session) -> tuple[UserAccount, UserAccount, str, s
     )
     return client, agent, client_token, agent_token
 
-
 def _stats(samples: list[float], *, path: str, method: str, status: int) -> dict:
     return {
         "path": path,
@@ -210,18 +204,16 @@ def _stats(samples: list[float], *, path: str, method: str, status: int) -> dict
         "max_ms": round(max(samples), 3),
     }
 
-
 def _bench_my_tickets_service(session: Session, client_account: UserAccount) -> dict:
     """
-    Measure list serialization path for /tickets/my.
+    Замеряет путь сериализации списка /tickets/my.
 
-    optimized: no comments (as in current API)
-    naive: load + serialize all comments (old behavior / N+1-ish cost)
+    optimized: без комментариев (как в текущем API)
+    naive: грузим и сериализуем все комментарии (старое поведение)
     """
     include_comments = PROFILE == "naive"
     samples: list[float] = []
 
-    # warmup
     _run_my_tickets_once(session, client_account, include_comments)
 
     for _ in range(BENCH_ROUNDS):
@@ -235,7 +227,6 @@ def _bench_my_tickets_service(session: Session, client_account: UserAccount) -> 
         method="GET",
         status=200,
     )
-
 
 def _run_my_tickets_once(
     session: Session,
@@ -276,9 +267,8 @@ def _run_my_tickets_once(
             )
             for ticket in tickets
         ]
-    # prevent optimizer from eliding work
-    return total + len(items)
 
+    return total + len(items)
 
 def bench_api() -> dict:
     session = _build_bench_session()
@@ -292,7 +282,6 @@ def bench_api() -> dict:
     ticket_system_application.dependency_overrides[get_database_session] = override_db
     client_account, _agent, client_token, agent_token = _seed_bench_data(session)
 
-    # Profile: promote cooldown
     old_cooldown = ticket_svc._PROMOTE_COOLDOWN_SECONDS
     if PROFILE == "naive":
         ticket_svc._PROMOTE_COOLDOWN_SECONDS = 0.0
@@ -329,10 +318,7 @@ def bench_api() -> dict:
             timed_http("archive", "GET", "/tickets/archive", agent_token)
             timed_http("problem_reasons", "GET", "/tickets/problem-reasons")
 
-            # my_tickets: service-level so we can A/B comments without rewriting routes
             results["my_tickets"] = _bench_my_tickets_service(session, client_account)
-            # Also record real HTTP for optimized (sanity); naive HTTP would still be optimized
-            # in product — documented in report.
 
         ticket_count = session.scalar(select(func.count()).select_from(SupportTicket)) or 0
         comment_count = session.scalar(select(func.count()).select_from(TicketComment)) or 0
@@ -365,7 +351,6 @@ def bench_api() -> dict:
             ),
         },
     }
-
 
 def collect(label: str, *, skip_pytest: bool = False) -> dict:
     print(f"\n=== Measuring metrics: {label} ===")
@@ -408,7 +393,6 @@ def collect(label: str, *, skip_pytest: bool = False) -> dict:
     print(f"\nSaved -> {out_path.relative_to(ROOT)}")
     return report
 
-
 def compare(before: str = "baseline", after: str = "after") -> None:
     before_path = METRICS_DIR / f"{before}.json"
     after_path = METRICS_DIR / f"{after}.json"
@@ -444,7 +428,6 @@ def compare(before: str = "baseline", after: str = "after") -> None:
         new = b["api_bench"]["endpoints"][name]["avg_ms"]
         print(f"{name:16} {old:12.2f} {new:12.2f}  {delta(old, new)}")
 
-
 def main() -> None:
     global SEED_TICKETS, BENCH_ROUNDS, PROFILE
 
@@ -471,7 +454,6 @@ def main() -> None:
         compare(args.before, args.after)
     else:
         collect(args.label, skip_pytest=args.skip_pytest)
-
 
 if __name__ == "__main__":
     main()

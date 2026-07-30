@@ -11,11 +11,10 @@ if TYPE_CHECKING:
     from app.models.support_ticket import SupportTicket
     from app.models.ticket_comment import TicketComment
 
-
 class UserAccount(DatabaseModelBase):
     """
-    Account in the ticket system: client, agent, or admin.
-    Table name: user_accounts
+    Аккаунт в системе: клиент, агент или админ.
+    Таблица: user_accounts
     """
 
     __tablename__ = "user_accounts"
@@ -33,22 +32,21 @@ class UserAccount(DatabaseModelBase):
         index=True,
     )
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    # Agent presence for staff UIs
+
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
-    # Agent-only fields (null for client/admin)
     agent_number: Mapped[int | None] = mapped_column(
         Integer,
         unique=True,
         nullable=True,
         index=True,
     )
-    # JSON list of weekday indices: 0=Mon … 6=Sun, e.g. "[0,1,2,3,4]"
+
     work_days: Mapped[str | None] = mapped_column(Text, nullable=True)
-    # "HH:MM" 24h local
+
     work_time_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
     work_time_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
-    # Last password set by admin (for admin UI only; login still uses hashed_password)
+
     admin_visible_password: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(

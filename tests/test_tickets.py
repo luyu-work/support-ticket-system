@@ -1,4 +1,4 @@
-"""Tests for creating and listing support tickets."""
+"""Тесты создания и списка тикетов."""
 
 from io import BytesIO
 
@@ -6,7 +6,6 @@ from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from app.models import SupportTicket, TicketStatus
-
 
 def _register_client(api_test_client: TestClient, email: str = "ticket.client@example.com") -> str:
     response = api_test_client.post(
@@ -20,7 +19,6 @@ def _register_client(api_test_client: TestClient, email: str = "ticket.client@ex
     assert response.status_code == 201
     return response.json()["access_token"]
 
-
 def test_problem_reasons_list(api_test_client: TestClient) -> None:
     response = api_test_client.get("/tickets/problem-reasons")
     assert response.status_code == 200
@@ -28,7 +26,6 @@ def test_problem_reasons_list(api_test_client: TestClient) -> None:
     values = {item["value"] for item in reasons}
     assert "login_issue" in values
     assert "other" in values
-
 
 def test_client_creates_ticket_without_photos(
     api_test_client: TestClient,
@@ -57,7 +54,6 @@ def test_client_creates_ticket_without_photos(
     assert saved is not None
     assert saved.status == TicketStatus.IN_QUEUE
 
-
 def test_client_creates_ticket_with_photo(api_test_client: TestClient) -> None:
     access_token = _register_client(api_test_client, email="photo.client@example.com")
     photo_bytes = b"\x89PNG\r\n\x1a\n" + b"fake-png-content"
@@ -79,7 +75,6 @@ def test_client_creates_ticket_with_photo(api_test_client: TestClient) -> None:
     assert len(payload["attachments"]) == 1
     assert payload["attachments"][0]["original_file_name"] == "screen.png"
 
-
 def test_create_ticket_requires_auth(api_test_client: TestClient) -> None:
     response = api_test_client.post(
         "/tickets",
@@ -89,7 +84,6 @@ def test_create_ticket_requires_auth(api_test_client: TestClient) -> None:
         },
     )
     assert response.status_code == 401
-
 
 def test_agent_cannot_create_ticket(
     api_test_client: TestClient,
@@ -120,7 +114,6 @@ def test_agent_cannot_create_ticket(
     )
     assert response.status_code == 403
 
-
 def test_list_my_tickets(api_test_client: TestClient) -> None:
     access_token = _register_client(api_test_client, email="list.client@example.com")
     headers = {"Authorization": f"Bearer {access_token}"}
@@ -142,7 +135,6 @@ def test_list_my_tickets(api_test_client: TestClient) -> None:
     assert payload["total_ticket_count"] == 2
     assert len(payload["items"]) == 2
 
-
 def test_unknown_problem_reason_returns_400(api_test_client: TestClient) -> None:
     access_token = _register_client(api_test_client, email="bad.reason@example.com")
     response = api_test_client.post(
@@ -154,7 +146,6 @@ def test_unknown_problem_reason_returns_400(api_test_client: TestClient) -> None
         },
     )
     assert response.status_code == 400
-
 
 def test_problem_reason_labels_match_product(api_test_client: TestClient) -> None:
     response = api_test_client.get("/tickets/problem-reasons")

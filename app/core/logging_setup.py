@@ -3,9 +3,8 @@ import sys
 
 from app.core.settings import ApplicationSettings
 
-
 def configure_application_logging(settings: ApplicationSettings) -> None:
-    """Simple console logging for the ticket system."""
+    """Простые логи в консоль."""
     log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
 
     logging.basicConfig(

@@ -3,7 +3,6 @@
 @import "../styles/tickets.css";
 @import "../styles/agent.css";
 
-/* Design tokens (shared by auth / tickets / agent) */
 :root {
   --page-bg: #f8f8f8;
   --text: #151515;

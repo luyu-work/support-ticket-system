@@ -36,7 +36,7 @@ function minutesToLabel(total: number): string {
   const clamped = Math.max(0, Math.min(24 * 60, total));
   const hours = Math.floor(clamped / 60) % 24;
   const minutes = clamped % 60;
-  // allow 24:00 as end of day only when total === 24*60 — map to 23:59 for API
+
   if (total >= 24 * 60) return "23:59";
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
@@ -47,7 +47,6 @@ function labelToMinutes(label: string): number {
   return Math.max(0, Math.min(23 * 60 + 59, h * 60 + m));
 }
 
-/** Accept "9:00", "09:00", "9.00", "900" → HH:MM or null if invalid. */
 function parseTimeInput(raw: string): string | null {
   const text = raw.trim().replace(".", ":").replace(",", ":");
   if (!text) return null;
@@ -211,7 +210,7 @@ export function AgentEditorModal({
     if (!track) return startMin;
     const rect = track.getBoundingClientRect();
     const ratio = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-    // snap to 15 minutes
+
     const raw = ratio * 24 * 60;
     return Math.round(raw / 15) * 15;
   }
@@ -288,7 +287,6 @@ export function AgentEditorModal({
     setMessage("");
     setMessageType("");
 
-    // Apply any in-progress typed times before save
     const startParsed = parseTimeInput(startText);
     const endParsed = parseTimeInput(endText);
     let resolvedStart = startMin;

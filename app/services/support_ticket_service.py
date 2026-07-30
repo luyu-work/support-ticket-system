@@ -1,4 +1,4 @@
-"""Create and read support tickets."""
+"""Создание и чтение тикетов."""
 
 import logging
 import time
@@ -28,34 +28,27 @@ from app.services.ticket_photo_storage import (
 
 logger = logging.getLogger(__name__)
 
-# Ticket not taken for this long → status "important"
 IMPORTANT_AFTER_HOURS = 8
-
 
 class UnknownProblemReasonError(Exception):
     def __init__(self, problem_reason: str) -> None:
         self.problem_reason = problem_reason
         super().__init__(problem_reason)
 
-
 class TicketNotAvailableForClaimError(Exception):
-    """Ticket cannot be claimed (missing, closed, or already taken)."""
-
+    """Тикет нельзя взять: нет, закрыт или уже у кого-то."""
 
 class TicketAlreadyAssignedError(Exception):
-    """Another agent already holds this ticket."""
-
+    """Тикет уже держит другой агент."""
 
 class TicketActionNotAllowedError(Exception):
-    """Agent cannot close/transfer this ticket."""
-
+    """Агент не может закрыть или передать этот тикет."""
 
 def build_ticket_title(problem_reason: str, custom_title: str | None) -> str:
     if custom_title and custom_title.strip():
         return custom_title.strip()[:255]
     label = PROBLEM_REASON_LABELS_RU.get(problem_reason, problem_reason)
     return label[:255]
-
 
 def _record_ticket_activity(
     database_session: Session,
@@ -66,7 +59,7 @@ def _record_ticket_activity(
     details: str | None = None,
     log_level: int = logging.INFO,
 ) -> None:
-    """Append one lifecycle event (not committed by itself)."""
+    """Добавляет одно событие в историю (commit снаружи)."""
     support_ticket_repository.add_activity(
         database_session,
         support_ticket_id=support_ticket_id,
@@ -82,17 +75,13 @@ def _record_ticket_activity(
         actor_user_id,
     )
 
-
-# Avoid re-scanning the whole queue on every pool/claim within a short window
 _PROMOTE_COOLDOWN_SECONDS = 30.0
 _last_promote_monotonic: float = 0.0
 
-
 def reset_promote_cooldown_for_tests() -> None:
-    """pytest: each test starts with a fresh promote window."""
+    """Для pytest: сбрасываем окно кулдауна promote между тестами."""
     global _last_promote_monotonic
     _last_promote_monotonic = 0.0
-
 
 def create_support_ticket_for_client(
     database_session: Session,
@@ -104,7 +93,7 @@ def create_support_ticket_for_client(
     photo_files: list[UploadFile] | None = None,
     settings: ApplicationSettings | None = None,
 ) -> SupportTicket:
-    """Client creates a ticket in queue; optional photos (max 5)."""
+    """Клиент создаёт тикет в очереди; фото по желанию, максимум 5."""
     application_settings = settings or get_application_settings()
     normalized_reason = problem_reason.strip()
     valid_reasons = {reason.value for reason in TicketProblemReason}
@@ -127,7 +116,7 @@ def create_support_ticket_for_client(
         assigned_agent_id=None,
     )
     support_ticket_repository.add_ticket(database_session, new_ticket)
-    database_session.flush()  # get support_ticket_id before saving files
+    database_session.flush()
 
     for photo_file in photos:
         storage_path, original_file_name = save_ticket_photo_to_disk(
@@ -158,13 +147,11 @@ def create_support_ticket_for_client(
         raise RuntimeError("Ticket disappeared after create")
     return ticket
 
-
 def get_support_ticket_by_id(
     database_session: Session,
     support_ticket_id: int,
 ) -> SupportTicket | None:
     return support_ticket_repository.get_ticket_by_id(database_session, support_ticket_id)
-
 
 def list_tickets_for_client(
     database_session: Session,
@@ -172,9 +159,9 @@ def list_tickets_for_client(
     client_account: UserAccount,
 ) -> tuple[list[SupportTicket], int]:
     """
-    All tickets of the client (no pagination).
+    Все тикеты клиента (без пагинации).
 
-    List view only needs ticket + photo count/preview — comments load on detail.
+    В списке хватает тикета и превью фото — комментарии грузим на деталке.
     """
     client_id = client_account.user_account_id
     total_ticket_count = support_ticket_repository.count_tickets_for_client(
@@ -184,17 +171,16 @@ def list_tickets_for_client(
     tickets = support_ticket_repository.list_tickets_for_client(database_session, client_id)
     return tickets, total_ticket_count
 
-
 def promote_stale_queue_tickets_to_important(
     database_session: Session,
     *,
     force: bool = False,
 ) -> int:
     """
-    Tickets still in queue longer than IMPORTANT_AFTER_HOURS become "important".
+    Тикеты, которые слишком долго висят в очереди, помечаем как «важные».
 
-    Uses a short cooldown so GET /pool under load does not re-scan every time.
-    Returns how many rows were updated.
+    Есть короткий кулдаун, чтобы GET /pool под нагрузкой не сканил каждый раз.
+    Возвращает, сколько строк обновили.
     """
     global _last_promote_monotonic
 
@@ -226,15 +212,14 @@ def promote_stale_queue_tickets_to_important(
     logger.info("Promoted %s stale ticket(s) to important", len(stale_ids))
     return len(stale_ids)
 
-
 def list_common_ticket_pool(
     database_session: Session,
     *,
     status_filter: str | None = None,
 ) -> list[SupportTicket]:
     """
-    Common pool for agents (and admins): all non-closed tickets.
-    Refresh "important" flags before listing.
+    Общий пул для агентов (и админов): все незакрытые тикеты.
+    Перед списком обновляем флаги «важно».
     """
     promote_stale_queue_tickets_to_important(database_session)
     return support_ticket_repository.list_pool_tickets(
@@ -242,14 +227,12 @@ def list_common_ticket_pool(
         status_filter=status_filter,
     )
 
-
 def list_archived_tickets(database_session: Session) -> list[SupportTicket]:
     """
-    Archive for agents and admins: closed tickets only.
-    Newest closed tickets first.
+    Архив для агентов и админов: только закрытые.
+    Сначала самые свежие.
     """
     return support_ticket_repository.list_archived_tickets(database_session)
-
 
 def claim_ticket_from_pool(
     database_session: Session,
@@ -258,8 +241,8 @@ def claim_ticket_from_pool(
     agent_account: UserAccount,
 ) -> SupportTicket:
     """
-    Free agent takes a ticket from the common pool:
-    assign agent + status in_progress.
+    Свободный агент берёт тикет из пула:
+    назначаем агента и статус in_progress.
     """
     promote_stale_queue_tickets_to_important(database_session)
 
@@ -279,7 +262,6 @@ def claim_ticket_from_pool(
     ):
         raise TicketAlreadyAssignedError
 
-    # Re-open of already owned ticket does not add a second "claimed" event
     already_owned = ticket.assigned_agent_id == agent_account.user_account_id
     ticket.assigned_agent_id = agent_account.user_account_id
     ticket.status = TicketStatus.IN_PROGRESS
@@ -298,21 +280,18 @@ def claim_ticket_from_pool(
         raise TicketNotAvailableForClaimError
     return claimed
 
-
 def format_agent_badge(
     user_account_id: int,
     *,
     agent_number: int | None = None,
 ) -> str:
-    """Display badge: prefer admin-assigned agent_number, else account id."""
+    """Бейдж агента: сначала № от админа, иначе id аккаунта."""
     number = agent_number if agent_number is not None else user_account_id
     return f"Агент #{int(number):03d}"
-
 
 def _assert_agent_owns_ticket(ticket: SupportTicket, agent_account: UserAccount) -> None:
     if ticket.assigned_agent_id != agent_account.user_account_id:
         raise TicketActionNotAllowedError
-
 
 def close_ticket_by_agent(
     database_session: Session,
@@ -321,7 +300,7 @@ def close_ticket_by_agent(
     agent_account: UserAccount,
     comment_text: str,
 ) -> SupportTicket:
-    """Close an owned ticket and store the agent's outcome comment."""
+    """Закрывает свой тикет и сохраняет комментарий с итогом."""
     cleaned_comment = comment_text.strip()
     if not cleaned_comment:
         raise TicketActionNotAllowedError
@@ -356,7 +335,6 @@ def close_ticket_by_agent(
         raise TicketNotAvailableForClaimError
     return closed
 
-
 def transfer_ticket_to_engineers_by_agent(
     database_session: Session,
     *,
@@ -384,8 +362,6 @@ def transfer_ticket_to_engineers_by_agent(
         raise TicketNotAvailableForClaimError
     return transferred
 
-
-# Re-export for API error handling
 __all__ = [
     "IMPORTANT_AFTER_HOURS",
     "InvalidTicketPhotoError",

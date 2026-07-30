@@ -15,7 +15,7 @@ export interface UserAccount {
   is_active: boolean;
   is_online: boolean;
   created_at: string;
-  /** Admin-assigned agent №; null for client/admin */
+
   agent_number?: number | null;
 }
 
@@ -109,7 +109,7 @@ export interface AgentAdmin {
   work_time_start: string | null;
   work_time_end: string | null;
   work_time_label: string;
-  /** Last password set in admin UI (for editing convenience). */
+
   password?: string | null;
   created_at: string;
 }

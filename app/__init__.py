@@ -1,1 +1,1 @@
-"""Support Ticket System — application package."""
+"""Пакет приложения: система поддержки с тикетами."""

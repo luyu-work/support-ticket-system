@@ -10,7 +10,7 @@ application_settings = get_application_settings()
 
 _engine_kwargs: dict[str, Any] = {"pool_pre_ping": True}
 if application_settings.uses_sqlite_database:
-    # SQLite needs this flag when used with FastAPI/threads
+
     _engine_kwargs = {
         "connect_args": {"check_same_thread": False},
     }
@@ -27,28 +27,24 @@ DatabaseSessionFactory = sessionmaker(
     class_=Session,
 )
 
-
 class DatabaseModelBase(DeclarativeBase):
-    """Base class for all SQLAlchemy models (User, Ticket, Comment, …)."""
-
+    """Базовый класс для всех моделей SQLAlchemy."""
 
 def create_database_tables_if_needed() -> None:
     """
-    For local SQLite only: create tables without Alembic/Docker.
-    PostgreSQL still uses: python -m alembic upgrade head
+    Только для локального SQLite: создаёт таблицы без Alembic и Docker.
+    Для PostgreSQL по-прежнему: python -m alembic upgrade head
     """
     if not application_settings.uses_sqlite_database:
         return
 
-    # Import models so metadata knows all tables
-    import app.models  # noqa: F401
+    import app.models
 
     DatabaseModelBase.metadata.create_all(bind=database_engine)
     _sqlite_add_missing_agent_columns()
 
-
 def _sqlite_add_missing_agent_columns() -> None:
-    """create_all does not ALTER existing tables — add agent profile columns if missing."""
+    """create_all не умеет ALTER — докидываем колонки профиля агента, если их нет."""
     from sqlalchemy import inspect, text
 
     inspector = inspect(database_engine)
@@ -72,11 +68,10 @@ def _sqlite_add_missing_agent_columns() -> None:
         for statement in alters:
             connection.execute(text(statement))
 
-
 def get_database_session() -> Generator[Session]:
     """
-    FastAPI dependency: one DB session per request.
-    Session closes automatically after the request finishes.
+    Зависимость FastAPI: одна сессия БД на запрос.
+    После ответа сессия закрывается сама.
     """
     database_session = DatabaseSessionFactory()
     try:

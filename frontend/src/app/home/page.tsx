@@ -9,9 +9,6 @@ import {
   getStoredUserAccount,
 } from "@/lib/auth-storage";
 
-/**
- * Legacy route: same as "/", kept for old bookmarks/links.
- */
 export default function HomePage() {
   const router = useRouter();
 

@@ -1,30 +1,27 @@
-"""Business enums for roles and ticket lifecycle."""
+"""Перечисления: роли и жизненный цикл тикета."""
 
 from enum import Enum
 
-
 class UserRole(str, Enum):
-    """Who is using the ticket system."""
+    """Кто работает в системе: клиент, агент или админ."""
 
-    CLIENT = "client"  # обычный пользователь (создаёт тикеты)
-    AGENT = "agent"  # агент поддержки
-    ADMIN = "admin"  # администратор
-
+    CLIENT = "client"
+    AGENT = "agent"
+    ADMIN = "admin"
 
 class TicketStatus(str, Enum):
-    """Lifecycle of a support ticket (see input.md)."""
+    """Статусы тикета по ходу жизни (см. input.md)."""
 
-    IN_QUEUE = "in_queue"  # в очереди / в пуле
-    IMPORTANT = "important"  # не обработан дольше 8 часов
-    IN_PROGRESS = "in_progress"  # агент взял в работу
-    CLOSED = "closed"  # агент закрыл
-    TRANSFERRED_TO_ENGINEERS = "transferred_to_engineers"  # передан инженерам
-
+    IN_QUEUE = "in_queue"
+    IMPORTANT = "important"
+    IN_PROGRESS = "in_progress"
+    CLOSED = "closed"
+    TRANSFERRED_TO_ENGINEERS = "transferred_to_engineers"
 
 class TicketProblemReason(str, Enum):
     """
-    Default reasons for the client select.
-    Easy to extend later without changing the Ticket column type (stored as string).
+    Причины для селекта у клиента.
+    Потом можно добавить новые — в БД это просто строка.
     """
 
     LOGIN_ISSUE = "login_issue"
@@ -33,9 +30,8 @@ class TicketProblemReason(str, Enum):
     FEATURE_REQUEST = "feature_request"
     OTHER = "other"
 
-
 class TicketActivityEventType(str, Enum):
-    """Audit log entries for a ticket lifecycle."""
+    """Типы событий в истории тикета."""
 
     CREATED = "created"
     CLAIMED = "claimed"

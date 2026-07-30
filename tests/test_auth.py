@@ -1,4 +1,4 @@
-"""Tests for registration, login, JWT, and staff seed."""
+"""Тесты регистрации, входа, JWT и сида сотрудников."""
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
@@ -10,19 +10,16 @@ from app.models import UserAccount, UserRole
 from app.services.seed_staff_accounts import seed_default_staff_accounts
 from app.services.user_account_service import register_client_account
 
-
 def test_password_hash_and_verify() -> None:
     hashed_password = hash_plain_password("SecretPass123")
     assert hashed_password != "SecretPass123"
     assert verify_plain_password("SecretPass123", hashed_password)
     assert not verify_plain_password("WrongPassword", hashed_password)
 
-
 def test_access_token_roundtrip() -> None:
     access_token = create_access_token({"sub": "42", "role": "client"})
     assert isinstance(access_token, str)
     assert len(access_token) > 20
-
 
 def test_seed_creates_admin_and_agent(database_session: Session) -> None:
     settings = get_application_settings()
@@ -43,7 +40,6 @@ def test_seed_creates_admin_and_agent(database_session: Session) -> None:
     assert agent_account.role == UserRole.AGENT
     assert verify_plain_password(settings.seed_agent_password, agent_account.hashed_password)
 
-
 def test_seed_is_idempotent(database_session: Session) -> None:
     settings = get_application_settings()
     seed_default_staff_accounts(database_session, settings)
@@ -57,7 +53,6 @@ def test_seed_is_idempotent(database_session: Session) -> None:
         ).all()
     )
     assert staff_count == 2
-
 
 def test_register_client_saves_email_full_name_password(
     api_test_client: TestClient,
@@ -87,7 +82,6 @@ def test_register_client_saves_email_full_name_password(
     assert saved_client is not None
     assert verify_plain_password("ClientPass123", saved_client.hashed_password)
 
-
 def test_register_duplicate_email_returns_400(api_test_client: TestClient) -> None:
     body = {
         "email": "dup@example.com",
@@ -100,7 +94,6 @@ def test_register_duplicate_email_returns_400(api_test_client: TestClient) -> No
     assert first_response.status_code == 201
     assert second_response.status_code == 400
     assert second_response.json()["detail"] == "Email is already registered"
-
 
 def test_login_client_after_register(api_test_client: TestClient) -> None:
     api_test_client.post(
@@ -121,7 +114,6 @@ def test_login_client_after_register(api_test_client: TestClient) -> None:
 
     assert response.status_code == 200
     assert response.json()["user_account"]["role"] == "client"
-
 
 def test_login_admin_and_agent_after_seed(
     api_test_client: TestClient,
@@ -150,7 +142,6 @@ def test_login_admin_and_agent_after_seed(
     assert agent_response.status_code == 200
     assert agent_response.json()["user_account"]["role"] == "agent"
 
-
 def test_login_wrong_password_returns_401(api_test_client: TestClient) -> None:
     api_test_client.post(
         "/auth/register",
@@ -169,11 +160,9 @@ def test_login_wrong_password_returns_401(api_test_client: TestClient) -> None:
     )
     assert response.status_code == 401
 
-
 def test_me_requires_token(api_test_client: TestClient) -> None:
     response = api_test_client.get("/auth/me")
     assert response.status_code == 401
-
 
 def test_me_returns_current_user(api_test_client: TestClient) -> None:
     register_response = api_test_client.post(
@@ -194,7 +183,6 @@ def test_me_returns_current_user(api_test_client: TestClient) -> None:
     assert response.status_code == 200
     assert response.json()["email"] == "me@example.com"
     assert response.json()["full_name"] == "Me User"
-
 
 def test_inactive_user_cannot_login(database_session: Session, api_test_client: TestClient) -> None:
     client_account = register_client_account(

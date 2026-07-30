@@ -1,10 +1,9 @@
-"""DB access for user accounts (clients, agents, admins)."""
+"""Работа с БД: аккаунты клиентов, агентов, админов."""
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models import UserAccount, UserRole
-
 
 def get_user_account_by_id(
     database_session: Session,
@@ -12,13 +11,11 @@ def get_user_account_by_id(
 ) -> UserAccount | None:
     return database_session.get(UserAccount, user_account_id)
 
-
 def get_user_account_by_email(
     database_session: Session,
     email: str,
 ) -> UserAccount | None:
     return database_session.scalar(select(UserAccount).where(UserAccount.email == email))
-
 
 def get_user_account_by_agent_number(
     database_session: Session,
@@ -28,7 +25,6 @@ def get_user_account_by_agent_number(
         select(UserAccount).where(UserAccount.agent_number == agent_number)
     )
 
-
 def get_agent_by_id(
     database_session: Session,
     user_account_id: int,
@@ -37,7 +33,6 @@ def get_agent_by_id(
     if agent is None or agent.role != UserRole.AGENT:
         return None
     return agent
-
 
 def list_agents(
     database_session: Session,
@@ -54,11 +49,10 @@ def list_agents(
     )
     return list(database_session.scalars(query).all())
 
-
 def add_user_account(
     database_session: Session,
     user_account: UserAccount,
 ) -> UserAccount:
-    """Stage a new account in the session (caller commits)."""
+    """Кладёт новый аккаунт в сессию (commit делает вызывающий)."""
     database_session.add(user_account)
     return user_account

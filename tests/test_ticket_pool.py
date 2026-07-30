@@ -1,4 +1,4 @@
-"""Common ticket pool for agents."""
+"""Общий пул тикетов для агентов."""
 
 from datetime import UTC, datetime, timedelta
 
@@ -12,7 +12,6 @@ from app.services.support_ticket_service import (
 )
 from tests.helpers import agent_token as get_agent_token
 from tests.helpers import register_client
-
 
 def test_agent_sees_common_pool(
     api_test_client: TestClient,
@@ -40,7 +39,6 @@ def test_agent_sees_common_pool(
     ids = {item["support_ticket_id"] for item in payload["items"]}
     assert create.json()["support_ticket_id"] in ids
 
-
 def test_client_cannot_access_pool(api_test_client: TestClient) -> None:
     client_token = register_client(api_test_client, "no.pool@example.com")
     response = api_test_client.get(
@@ -48,7 +46,6 @@ def test_client_cannot_access_pool(api_test_client: TestClient) -> None:
         headers={"Authorization": f"Bearer {client_token}"},
     )
     assert response.status_code == 403
-
 
 def test_closed_ticket_moves_to_archive(
     api_test_client: TestClient,
@@ -82,13 +79,11 @@ def test_closed_ticket_moves_to_archive(
     archive_ids = {item["support_ticket_id"] for item in archive.json()["items"]}
     assert ticket_id in archive_ids
 
-    # Client cannot open archive
     client_archive = api_test_client.get(
         "/tickets/archive",
         headers={"Authorization": f"Bearer {client_token}"},
     )
     assert client_archive.status_code == 403
-
 
 def test_ticket_activity_log_and_agent_comment(
     api_test_client: TestClient,
@@ -101,7 +96,7 @@ def test_ticket_activity_log_and_agent_comment(
         data={"problem_reason": "bug_report", "description": "need history"},
     )
     ticket_id = create.json()["support_ticket_id"]
-    # Client-facing create response must not expose activity log
+
     assert create.json().get("activity_log") == []
 
     agent_token = get_agent_token(api_test_client, database_session)
@@ -130,7 +125,6 @@ def test_ticket_activity_log_and_agent_comment(
     assert detail.json()["comments"][0]["comment_text"] == "Исправлено на стороне поддержки"
     assert len(detail.json()["activity_log"]) == 3
 
-    # Client sees comment but not activity log
     client_detail = api_test_client.get(
         f"/tickets/{ticket_id}",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -140,7 +134,6 @@ def test_ticket_activity_log_and_agent_comment(
     assert len(client_body["comments"]) == 1
     assert client_body["comments"][0]["comment_text"] == "Исправлено на стороне поддержки"
     assert client_body["activity_log"] == []
-
 
 def test_agent_claims_ticket(
     api_test_client: TestClient,
@@ -166,7 +159,6 @@ def test_agent_claims_ticket(
     body = claim.json()
     assert body["status"] == "in_progress"
     assert body["assigned_agent_id"] is not None
-
 
 def test_agent_closes_and_transfers_ticket(
     api_test_client: TestClient,
@@ -207,7 +199,6 @@ def test_agent_closes_and_transfers_ticket(
     assert close.status_code == 200
     assert close.json()["status"] == "closed"
 
-    # Comment is required when closing
     create3 = api_test_client.post(
         "/tickets",
         headers={"Authorization": f"Bearer {client_token}"},
@@ -221,7 +212,6 @@ def test_agent_closes_and_transfers_ticket(
         json={"comment_text": "   "},
     )
     assert close_no_comment.status_code in {403, 422}
-
 
 def test_stale_queue_becomes_important(database_session: Session) -> None:
     from app.core.security import hash_plain_password

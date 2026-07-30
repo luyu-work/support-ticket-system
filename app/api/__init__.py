@@ -1,1 +1,1 @@
-"""HTTP routes for the ticket system."""
+"""HTTP-роуты тикет-системы."""

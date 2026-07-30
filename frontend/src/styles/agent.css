@@ -1,4 +1,4 @@
-/* Agent workspace: pool layout */
+
 
 .agent-page {
   height: 100vh;
@@ -268,7 +268,6 @@
   width: 107px;
 }
 
-/* Admin agents table: narrow centered number column */
 .agent-table th.col-agent-num,
 .agent-table td.col-agent-num {
   width: 60px;
@@ -340,8 +339,6 @@
   color: #ed5e5e;
 }
 
-/* ----- Admin agents page ----- */
-
 .agents-add-button {
   margin-left: auto;
   margin-top: 0;
@@ -408,7 +405,6 @@
   gap: 10px !important;
 }
 
-/* Same 7-col grid as .schedule-days so each preset = width of one day cell */
 .schedule-presets {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));

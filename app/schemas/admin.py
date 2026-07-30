@@ -1,4 +1,4 @@
-"""Admin: agent management schemas."""
+"""Схемы админки для агентов."""
 
 from datetime import datetime
 
@@ -6,13 +6,11 @@ from pydantic import BaseModel, EmailStr, Field, field_validator
 
 WEEKDAY_LABELS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
 
-
 def validate_work_days(value: list[int]) -> list[int]:
     cleaned = sorted({day for day in value if 0 <= day <= 6})
     if not cleaned:
         raise ValueError("Выберите хотя бы один рабочий день")
     return cleaned
-
 
 def validate_hh_mm(value: str) -> str:
     text = value.strip()
@@ -23,7 +21,6 @@ def validate_hh_mm(value: str) -> str:
     if not (0 <= hour <= 23 and 0 <= minute <= 59):
         raise ValueError("Некорректное время")
     return f"{hour:02d}:{minute:02d}"
-
 
 class AgentCreateRequest(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
@@ -49,7 +46,6 @@ class AgentCreateRequest(BaseModel):
     def _time(cls, value: str) -> str:
         return validate_hh_mm(value)
 
-
 class AgentUpdateRequest(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
     agent_number: int | None = Field(default=None, ge=1, le=9999)
@@ -74,7 +70,6 @@ class AgentUpdateRequest(BaseModel):
     def _time(cls, value: str | None) -> str | None:
         return None if value is None else validate_hh_mm(value)
 
-
 class AgentAdminResponse(BaseModel):
     user_account_id: int
     email: str
@@ -90,7 +85,6 @@ class AgentAdminResponse(BaseModel):
     work_time_label: str
     password: str | None = None
     created_at: datetime
-
 
 class AgentListResponse(BaseModel):
     items: list[AgentAdminResponse]

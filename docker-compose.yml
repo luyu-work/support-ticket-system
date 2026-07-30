@@ -26,7 +26,6 @@ services:
     env_file:
       - .env.example
     environment:
-      # Force Postgres in Docker (override SQLite default from .env.example)
       DATABASE_URL_OVERRIDE: ""
       POSTGRES_HOST: postgres
       POSTGRES_PORT: "5432"

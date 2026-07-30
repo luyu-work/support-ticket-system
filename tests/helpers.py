@@ -1,4 +1,4 @@
-"""Shared helpers for API tests (auth tokens, client registration)."""
+"""Общие хелперы для API-тестов (токены, регистрация клиента)."""
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
@@ -6,11 +6,10 @@ from sqlalchemy.orm import Session
 from app.core.settings import get_application_settings
 from app.services.seed_staff_accounts import seed_default_staff_accounts
 
-
 def register_client(
     api_test_client: TestClient, email: str, *, password: str = "ClientPass123"
 ) -> str:
-    """Register a client and return access_token."""
+    """Регистрирует клиента и возвращает access_token."""
     response = api_test_client.post(
         "/auth/register",
         json={
@@ -22,10 +21,8 @@ def register_client(
     assert response.status_code == 201, response.text
     return response.json()["access_token"]
 
-
 def auth_headers(token: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {token}"}
-
 
 def admin_token(api_test_client: TestClient, database_session: Session) -> str:
     settings = get_application_settings()
@@ -39,7 +36,6 @@ def admin_token(api_test_client: TestClient, database_session: Session) -> str:
     )
     assert login.status_code == 200, login.text
     return login.json()["access_token"]
-
 
 def agent_token(api_test_client: TestClient, database_session: Session) -> str:
     settings = get_application_settings()

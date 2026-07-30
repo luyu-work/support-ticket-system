@@ -2,9 +2,8 @@ from functools import lru_cache
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 class ApplicationSettings(BaseSettings):
-    """All runtime settings for the ticket system (from env / .env file)."""
+    """Все настройки приложения (из env / .env)."""
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -16,8 +15,6 @@ class ApplicationSettings(BaseSettings):
     application_environment: str = "local"
     application_debug: bool = True
 
-    # If set, used as-is (example: sqlite:///./ticket_system_local.db)
-    # If empty — build PostgreSQL URL from fields below.
     database_url_override: str | None = None
 
     postgres_host: str = "localhost"
@@ -30,7 +27,6 @@ class ApplicationSettings(BaseSettings):
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = 60
 
-    # Default staff accounts (created once on API startup if missing)
     seed_staff_on_startup: bool = True
     seed_admin_email: str = "root@gmail.com"
     seed_admin_password: str = "root"
@@ -41,13 +37,12 @@ class ApplicationSettings(BaseSettings):
 
     log_level: str = "INFO"
 
-    # Ticket photo uploads (relative to project root)
     ticket_uploads_directory: str = "uploads/ticket_attachments"
-    max_ticket_photo_size_bytes: int = 5 * 1024 * 1024  # 5 MB per file
+    max_ticket_photo_size_bytes: int = 5 * 1024 * 1024
 
     @property
     def database_connection_url(self) -> str:
-        """SQLAlchemy URL: override (SQLite/Postgres) or default PostgreSQL."""
+        """URL для SQLAlchemy: свой (SQLite/Postgres) или PostgreSQL по умолчанию."""
         override = (self.database_url_override or "").strip()
         if override:
             return override
@@ -61,8 +56,7 @@ class ApplicationSettings(BaseSettings):
     def uses_sqlite_database(self) -> bool:
         return self.database_connection_url.startswith("sqlite")
 
-
 @lru_cache
 def get_application_settings() -> ApplicationSettings:
-    """One shared settings object for the whole process."""
+    """Один общий объект настроек на весь процесс."""
     return ApplicationSettings()

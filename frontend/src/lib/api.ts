@@ -67,9 +67,9 @@ async function apiFetch<T>(
     try {
       payload = await response.json();
     } catch {
-      /* empty */
+
     }
-    // Expired / invalid JWT — drop local session so UI can send user to login
+
     if (response.status === 401 && auth) {
       clearAuthSession();
     }
@@ -112,11 +112,10 @@ export async function logoutUser(): Promise<void> {
   try {
     await apiFetch<UserAccount>("/auth/logout", { method: "POST" }, true);
   } catch {
-    /* still clear local session */
+
   }
 }
 
-/** Mark agent offline on server, then wipe local JWT. */
 export async function logoutAndClearSession(): Promise<void> {
   await logoutUser();
   clearAuthSession();

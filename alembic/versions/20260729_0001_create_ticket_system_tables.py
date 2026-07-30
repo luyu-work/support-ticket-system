@@ -1,9 +1,8 @@
-"""create ticket system tables
+"""Создаёт основные таблицы тикет-системы.
 
 Revision ID: 20260729_0001
 Revises:
 Create Date: 2026-07-29
-
 """
 
 from typing import Sequence, Union
@@ -15,7 +14,6 @@ revision: str = "20260729_0001"
 down_revision: Union[str, None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
 
 def upgrade() -> None:
     op.create_table(
@@ -162,7 +160,6 @@ def upgrade() -> None:
         ["author_user_id"],
         unique=False,
     )
-
 
 def downgrade() -> None:
     op.drop_index("ix_ticket_comments_author_user_id", table_name="ticket_comments")

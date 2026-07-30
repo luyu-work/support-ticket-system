@@ -1,4 +1,4 @@
-"""Request/response bodies for registration and login."""
+"""Тела запросов/ответов для регистрации и входа."""
 
 from datetime import datetime
 
@@ -6,25 +6,22 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 from app.models.enums import UserRole
 
-
 class ClientRegistrationRequest(BaseModel):
-    """Body for client self-registration."""
+    """Тело запроса на саморегистрацию клиента."""
 
     email: EmailStr
     full_name: str = Field(min_length=1, max_length=255)
-    # bcrypt truncates above 72 bytes — keep the API limit aligned
+
     password: str = Field(min_length=8, max_length=72)
 
-
 class UserLoginRequest(BaseModel):
-    """Body for login (client, agent, or admin)."""
+    """Тело запроса на вход (клиент, агент или админ)."""
 
     email: EmailStr
     password: str = Field(min_length=1, max_length=72)
 
-
 class UserAccountResponse(BaseModel):
-    """Safe user data (never returns password hash)."""
+    """Безопасные данные пользователя (хеш пароля не отдаём)."""
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -35,12 +32,11 @@ class UserAccountResponse(BaseModel):
     is_active: bool
     is_online: bool
     created_at: datetime
-    # Present for agents (admin-assigned №); null for client/admin
+
     agent_number: int | None = None
 
-
 class AccessTokenResponse(BaseModel):
-    """JWT returned after successful login or registration."""
+    """JWT после успешного входа или регистрации."""
 
     access_token: str
     token_type: str = "bearer"

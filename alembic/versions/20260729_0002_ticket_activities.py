@@ -1,9 +1,8 @@
-"""ticket activities audit log
+"""Таблица истории событий по тикету.
 
 Revision ID: 20260729_0002
 Revises: 20260729_0001
 Create Date: 2026-07-29
-
 """
 
 from typing import Sequence, Union
@@ -15,7 +14,6 @@ revision: str = "20260729_0002"
 down_revision: Union[str, None] = "20260729_0001"
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
-
 
 def upgrade() -> None:
     op.create_table(
@@ -66,7 +64,6 @@ def upgrade() -> None:
         ["created_at"],
         unique=False,
     )
-
 
 def downgrade() -> None:
     op.drop_index("ix_ticket_activities_created_at", table_name="ticket_activities")

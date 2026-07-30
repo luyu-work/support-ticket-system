@@ -20,7 +20,6 @@ export default function LoginPage() {
   const [messageType, setMessageType] = useState<"error" | "success" | "">("");
   const [loading, setLoading] = useState(false);
 
-  // Already signed in → go to role home (do not bounce through "/")
   useEffect(() => {
     const token = getAccessToken();
     const user = getStoredUserAccount();

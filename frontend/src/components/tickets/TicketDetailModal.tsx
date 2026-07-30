@@ -25,11 +25,11 @@ interface TicketDetailModalProps {
   ticket: SupportTicket | null;
   open: boolean;
   onClose: () => void;
-  /** Agent: cannot leave until close or transfer (for queue/important tickets). */
+
   lockUntilResolved?: boolean;
-  /** Show agent action buttons (close / transfer). */
+
   agentActions?: boolean;
-  /** Agent/admin: show «Логи» and activity timeline (hidden for clients). */
+
   showTicketLogs?: boolean;
   onResolved?: (ticket: SupportTicket) => void;
 }
@@ -97,7 +97,7 @@ export function TicketDetailModal({
             objectUrls.push(url);
             urls.push(url);
           } catch {
-            /* skip */
+
           }
         }
         if (!cancelled) setPhotoUrls(urls);
@@ -250,7 +250,7 @@ export function TicketDetailModal({
   const isLogsPanel = showTicketLogs && panel === "logs" && !isCloseConfirm;
   const comments = view.comments || [];
   const activityLog = view.activity_log || [];
-  /** Staff sees creation time; client modal matches Figma (no created_at field). */
+
   const showCreatedAt = showTicketLogs && !isCloseConfirm && !isLogsPanel;
 
   return (
@@ -314,7 +314,7 @@ export function TicketDetailModal({
                 ) : (
                   <ul className="ticket-activity-log">
                     {activityLog.map((event) => {
-                      // Claim/transfer store agent name in `details` too — don't show twice
+
                       const details =
                         event.details &&
                         event.event_type !== "closed" &&
@@ -383,7 +383,7 @@ export function TicketDetailModal({
                     <div className="ticket-detail-label">Фотографии</div>
                     <div className="ticket-detail-photos">
                       {photoUrls.map((url) => (
-                        // eslint-disable-next-line @next/next/no-img-element
+
                         <img
                           key={url}
                           className="ticket-detail-photo"

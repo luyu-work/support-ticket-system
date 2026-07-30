@@ -1,6 +1,5 @@
 type SortDir = "asc" | "desc";
 
-/** Dual chevron: inactive = both gray; active asc = up blue; active desc = down blue. */
 export function SortChevrons({ active, dir }: { active: boolean; dir: SortDir }) {
   const up = active && dir === "asc" ? "#3761F3" : "#9A9A9A";
   const down = active && dir === "desc" ? "#3761F3" : "#9A9A9A";

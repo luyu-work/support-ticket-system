@@ -1,4 +1,4 @@
-"""Data access layer: SQLAlchemy queries live here, not in services."""
+"""Слой доступа к данным: SQL-запросы живут здесь, не в сервисах."""
 
 from app.repositories.support_ticket_repository import (
     add_activity,

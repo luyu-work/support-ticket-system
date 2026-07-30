@@ -13,18 +13,16 @@ if TYPE_CHECKING:
     from app.models.ticket_comment import TicketComment
     from app.models.user_account import UserAccount
 
-
 class SupportTicket(DatabaseModelBase):
     """
-    One support request from a client.
-    Table name: support_tickets
+    Один запрос в поддержку от клиента.
+    Таблица: support_tickets
     """
 
     __tablename__ = "support_tickets"
 
     support_ticket_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
 
-    # Short label in lists; problem_reason is the select value from the form
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     problem_reason: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)

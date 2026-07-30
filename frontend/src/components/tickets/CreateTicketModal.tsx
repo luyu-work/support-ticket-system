@@ -272,7 +272,6 @@ export function CreateTicketModal({ open, onClose, onCreated }: CreateTicketModa
             <div className="photo-preview-list">
               {photoPreviews.map((url, index) => (
                 <div key={url} className="photo-preview-tile">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={url} alt="" />
                   <button
                     type="button"

@@ -4,10 +4,9 @@ from app.core.settings import get_application_settings
 
 health_router = APIRouter(tags=["health"])
 
-
 @health_router.get("/health")
 def check_application_health() -> dict[str, str]:
-    """Simple live check: app is up and can answer."""
+    """Простая проверка: приложение живо и отвечает."""
     settings = get_application_settings()
     return {
         "status": "ok",

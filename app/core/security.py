@@ -1,4 +1,4 @@
-"""Password hashing and JWT helpers."""
+"""Хеш паролей и работа с JWT."""
 
 from datetime import UTC, datetime, timedelta
 from typing import Any
@@ -10,22 +10,19 @@ from app.core.settings import ApplicationSettings, get_application_settings
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-
 def hash_plain_password(plain_password: str) -> str:
-    """Turn a plain password into a hash for storage."""
+    """Пароль в открытом виде → хеш для хранения."""
     return password_context.hash(plain_password)
 
-
 def verify_plain_password(plain_password: str, hashed_password: str) -> bool:
-    """Check plain password against stored hash."""
+    """Сверяет введённый пароль с хешем в базе."""
     return password_context.verify(plain_password, hashed_password)
-
 
 def create_access_token(
     token_payload: dict[str, Any],
     settings: ApplicationSettings | None = None,
 ) -> str:
-    """Build a signed JWT access token."""
+    """Собирает подписанный JWT."""
     application_settings = settings or get_application_settings()
     expire_at = datetime.now(UTC) + timedelta(
         minutes=application_settings.jwt_access_token_expire_minutes,
@@ -37,14 +34,13 @@ def create_access_token(
         algorithm=application_settings.jwt_algorithm,
     )
 
-
 def decode_access_token(
     access_token: str,
     settings: ApplicationSettings | None = None,
 ) -> dict[str, Any]:
     """
-    Decode and validate JWT.
-    Raises JWTError if token is invalid or expired.
+    Разбирает и проверяет JWT.
+    Если токен битый или протух — кидает JWTError.
     """
     application_settings = settings or get_application_settings()
     return jwt.decode(

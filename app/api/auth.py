@@ -1,4 +1,4 @@
-"""Registration, login, and current user profile."""
+"""Регистрация, вход и профиль текущего пользователя."""
 
 import logging
 
@@ -26,7 +26,6 @@ logger = logging.getLogger(__name__)
 
 auth_router = APIRouter(prefix="/auth", tags=["auth"])
 
-
 def _build_access_token_response(user_account) -> AccessTokenResponse:
     access_token = create_access_token(
         {
@@ -40,7 +39,6 @@ def _build_access_token_response(user_account) -> AccessTokenResponse:
         user_account=UserAccountResponse.model_validate(user_account),
     )
 
-
 @auth_router.post(
     "/register",
     response_model=AccessTokenResponse,
@@ -51,8 +49,8 @@ def register_client(
     database_session: DatabaseSessionDep,
 ) -> AccessTokenResponse:
     """
-    Client registration: email, full name, password → saved in DB.
-    Returns JWT so the client can open the ticket form right away.
+    Регистрация клиента: email, имя и пароль пишутся в БД.
+    В ответ отдаём JWT — сразу можно открывать форму тикета.
     """
     try:
         new_client = register_client_account(
@@ -70,13 +68,12 @@ def register_client(
     logger.info("Client registered | user_account_id=%s", new_client.user_account_id)
     return _build_access_token_response(new_client)
 
-
 @auth_router.post("/login", response_model=AccessTokenResponse)
 def login_user_account(
     login_request: UserLoginRequest,
     database_session: DatabaseSessionDep,
 ) -> AccessTokenResponse:
-    """Login for client, agent, or admin."""
+    """Вход: клиент, агент или админ."""
     try:
         user_account = authenticate_user_account(
             database_session,
@@ -94,7 +91,6 @@ def login_user_account(
             detail="User account is inactive",
         ) from error
 
-    # Agents mark themselves online for admin agent list
     if is_agent(user_account):
         user_account = set_user_online_status(
             database_session,
@@ -109,13 +105,12 @@ def login_user_account(
     )
     return _build_access_token_response(user_account)
 
-
 @auth_router.post("/logout", response_model=UserAccountResponse)
 def logout_user_account(
     database_session: DatabaseSessionDep,
     current_user_account: CurrentUserAccountDep,
 ) -> UserAccountResponse:
-    """Clear online presence (agents) when leaving the app."""
+    """При выходе сбрасываем «онлайн» у агента."""
     updated = set_user_online_status(
         database_session,
         user_account=current_user_account,
@@ -124,10 +119,9 @@ def logout_user_account(
     logger.info("User logged out | user_account_id=%s", updated.user_account_id)
     return UserAccountResponse.model_validate(updated)
 
-
 @auth_router.get("/me", response_model=UserAccountResponse)
 def get_my_user_account(
     current_user_account: CurrentUserAccountDep,
 ) -> UserAccountResponse:
-    """Return the profile of the user who owns the current JWT."""
+    """Профиль пользователя из текущего JWT."""
     return UserAccountResponse.model_validate(current_user_account)

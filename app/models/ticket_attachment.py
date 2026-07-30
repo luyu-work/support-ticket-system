@@ -9,14 +9,12 @@ from app.models.base import DatabaseModelBase
 if TYPE_CHECKING:
     from app.models.support_ticket import SupportTicket
 
-# Business rule (enforced in services, not only in DB): max 5 photos per ticket
 MAX_ATTACHMENTS_PER_TICKET = 5
-
 
 class TicketAttachment(DatabaseModelBase):
     """
-    One photo/file attached to a ticket (optional, up to 5 per ticket).
-    Table name: ticket_attachments
+    Одно фото/файл к тикету (необязательно, до 5 штук).
+    Таблица: ticket_attachments
     """
 
     __tablename__ = "ticket_attachments"
@@ -28,7 +26,7 @@ class TicketAttachment(DatabaseModelBase):
         nullable=False,
         index=True,
     )
-    # Where the file is stored on disk / object storage (path or key)
+
     storage_path: Mapped[str] = mapped_column(String(512), nullable=False)
     original_file_name: Mapped[str] = mapped_column(String(255), nullable=False)
 

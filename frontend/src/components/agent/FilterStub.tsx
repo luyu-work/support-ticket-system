@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 
-/** Filter button + “coming soon” dropdown (stub for real filters later). */
 export function FilterStub() {
   const [open, setOpen] = useState(false);
 

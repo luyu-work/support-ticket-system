@@ -1,4 +1,4 @@
-"""Admin CRUD for support agents."""
+"""CRUD агентов для админа."""
 
 import json
 import logging
@@ -13,24 +13,19 @@ from app.services.support_ticket_service import format_agent_badge
 
 logger = logging.getLogger(__name__)
 
-
 class AgentNotFoundError(Exception):
     pass
-
 
 class AgentNumberTakenError(Exception):
     pass
 
-
 class AgentEmailTakenError(Exception):
     pass
-
 
 class AgentValidationError(Exception):
     def __init__(self, detail: str) -> None:
         self.detail = detail
         super().__init__(detail)
-
 
 def parse_work_days(raw: str | None) -> list[int]:
     if not raw:
@@ -43,10 +38,8 @@ def parse_work_days(raw: str | None) -> list[int]:
         pass
     return []
 
-
 def dump_work_days(days: list[int]) -> str:
     return json.dumps(sorted({day for day in days if 0 <= day <= 6}))
-
 
 def work_days_label(days: list[int]) -> str:
     if not days:
@@ -60,12 +53,10 @@ def work_days_label(days: list[int]) -> str:
     labels = [WEEKDAY_LABELS_RU[day] for day in days]
     return ", ".join(labels)
 
-
 def work_time_label(start: str | None, end: str | None) -> str:
     if not start or not end:
         return "—"
     return f"{start}–{end}"
-
 
 def _assert_time_range(start: str, end: str) -> None:
     def to_minutes(value: str) -> int:
@@ -75,9 +66,8 @@ def _assert_time_range(start: str, end: str) -> None:
     if to_minutes(start) >= to_minutes(end):
         raise AgentValidationError("Время окончания должно быть позже начала")
 
-
 def agent_to_response(agent: UserAccount) -> AgentAdminResponse:
-    """Map ORM agent to a typed Pydantic response model."""
+    """ORM-агент → ответ в Pydantic-модели."""
     days = parse_work_days(agent.work_days)
     number = agent.agent_number
     return AgentAdminResponse(
@@ -100,17 +90,14 @@ def agent_to_response(agent: UserAccount) -> AgentAdminResponse:
         created_at=agent.created_at,
     )
 
-
 def list_agents(database_session: Session, *, include_inactive: bool = False) -> list[UserAccount]:
     return user_account_repository.list_agents(
         database_session,
         include_inactive=include_inactive,
     )
 
-
 def get_agent_by_id(database_session: Session, user_account_id: int) -> UserAccount | None:
     return user_account_repository.get_agent_by_id(database_session, user_account_id)
-
 
 def _ensure_agent_number_free(
     database_session: Session,
@@ -128,7 +115,6 @@ def _ensure_agent_number_free(
         return
     raise AgentNumberTakenError
 
-
 def _ensure_email_free(
     database_session: Session,
     email: str,
@@ -141,7 +127,6 @@ def _ensure_email_free(
     if exclude_user_id is not None and existing.user_account_id == exclude_user_id:
         return
     raise AgentEmailTakenError
-
 
 def create_agent(
     database_session: Session,
@@ -177,7 +162,6 @@ def create_agent(
     database_session.refresh(agent)
     logger.info("Agent created | id=%s number=%s", agent.user_account_id, agent_number)
     return agent
-
 
 def update_agent(
     database_session: Session,
@@ -234,9 +218,8 @@ def update_agent(
     logger.info("Agent updated | id=%s", agent.user_account_id)
     return agent
 
-
 def delete_agent(database_session: Session, *, user_account_id: int) -> None:
-    """Soft-delete: deactivate agent (tickets history stays)."""
+    """Мягкое удаление: деактивируем агента, история тикетов остаётся."""
     agent = get_agent_by_id(database_session, user_account_id)
     if agent is None or not agent.is_active:
         raise AgentNotFoundError

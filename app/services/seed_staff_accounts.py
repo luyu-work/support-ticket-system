@@ -1,4 +1,4 @@
-"""Create default admin and agent accounts in the database."""
+"""Создаёт в БД дефолтных админа и агента."""
 
 import logging
 
@@ -11,12 +11,11 @@ from app.services.user_account_service import ensure_staff_user_account
 
 logger = logging.getLogger(__name__)
 
-
 def seed_default_staff_accounts(
     database_session: Session,
     settings: ApplicationSettings | None = None,
 ) -> None:
-    """Insert admin + agent if they are not already in the DB."""
+    """Добавляет админа и агента, если их ещё нет в БД."""
     application_settings = settings or get_application_settings()
 
     admin_account = ensure_staff_user_account(
@@ -44,11 +43,10 @@ def seed_default_staff_accounts(
         agent_account.user_account_id,
     )
 
-
 def seed_default_staff_accounts_on_startup() -> None:
     """
-    Open a DB session and seed staff.
-    Safe to call on API boot; logs a warning if DB is not ready yet.
+    Открывает сессию БД и сидит сотрудников.
+    Можно звать при старте API; если БД ещё не готова — пишем warning.
     """
     application_settings = get_application_settings()
     if not application_settings.seed_staff_on_startup:

@@ -1,4 +1,4 @@
-"""FastAPI dependencies: DB session, current user from JWT."""
+"""Зависимости FastAPI: сессия БД и текущий пользователь из JWT."""
 
 from typing import Annotated
 
@@ -17,7 +17,6 @@ bearer_access_token_scheme = HTTPBearer(auto_error=False)
 
 DatabaseSessionDep = Annotated[Session, Depends(get_database_session)]
 
-
 def get_current_user_account(
     database_session: DatabaseSessionDep,
     bearer_credentials: Annotated[
@@ -25,7 +24,7 @@ def get_current_user_account(
         Depends(bearer_access_token_scheme),
     ],
 ) -> UserAccount:
-    """Read Bearer JWT and load the user from DB."""
+    """Читает Bearer JWT и достаёт пользователя из БД."""
     unauthorized = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate access token",
@@ -47,9 +46,7 @@ def get_current_user_account(
 
     return user_account
 
-
 CurrentUserAccountDep = Annotated[UserAccount, Depends(get_current_user_account)]
-
 
 def require_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
     if role_value(current_user_account) != UserRole.ADMIN.value:
@@ -59,7 +56,6 @@ def require_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccou
         )
     return current_user_account
 
-
 def require_agent_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
     if role_value(current_user_account) != UserRole.AGENT.value:
         raise HTTPException(
@@ -67,7 +63,6 @@ def require_agent_role(current_user_account: CurrentUserAccountDep) -> UserAccou
             detail="Agent role required",
         )
     return current_user_account
-
 
 def require_agent_or_admin_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
     if role_value(current_user_account) not in {
@@ -80,7 +75,6 @@ def require_agent_or_admin_role(current_user_account: CurrentUserAccountDep) -> 
         )
     return current_user_account
 
-
 def require_client_role(current_user_account: CurrentUserAccountDep) -> UserAccount:
     if role_value(current_user_account) != UserRole.CLIENT.value:
         raise HTTPException(
@@ -88,7 +82,6 @@ def require_client_role(current_user_account: CurrentUserAccountDep) -> UserAcco
             detail="Client role required",
         )
     return current_user_account
-
 
 ClientAccountDep = Annotated[UserAccount, Depends(require_client_role)]
 AdminAccountDep = Annotated[UserAccount, Depends(require_admin_role)]

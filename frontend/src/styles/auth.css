@@ -1,4 +1,4 @@
-/* Auth screens (tokens live in globals.css :root) */
+
 
 * {
   box-sizing: border-box;
@@ -16,8 +16,6 @@ body {
   padding: 0;
 }
 
-/* ----- Auth form shell (login / register) ----- */
-
 .auth-page {
   width: 100%;
   max-width: var(--form-width);
@@ -25,7 +23,7 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 40px;
-  /* page-level inset lives here, not on body */
+
   margin: 40px 16px;
   box-sizing: border-box;
 }
@@ -213,8 +211,6 @@ body {
   color: var(--accent-80);
   border-bottom-color: var(--accent-80);
 }
-
-/* ----- Home placeholder (light, same palette) ----- */
 
 .home-card {
   width: 100%;

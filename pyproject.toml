@@ -10,19 +10,19 @@ extend-exclude = [
 
 [tool.ruff.lint]
 select = [
-    "E",      # pycodestyle errors
-    "W",      # pycodestyle warnings
-    "F",      # pyflakes
-    "I",      # isort
-    "UP",     # pyupgrade (replace outdated practices)
-    "B",      # flake8-bugbear
-    "SIM",    # flake8-simplify
-    "RUF",    # ruff-specific
+    "E",
+    "W",
+    "F",
+    "I",
+    "UP",
+    "B",
+    "SIM",
+    "RUF",
 ]
 ignore = [
-    "E501",   # line length handled by formatter
-    "B008",   # FastAPI Depends() in defaults is intentional
-    "RUF001", # ambiguous unicode — intentional Russian UI strings
+    "E501",
+    "B008",
+    "RUF001",
     "RUF002",
     "RUF003",
 ]

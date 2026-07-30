@@ -9,10 +9,6 @@ import {
   getStoredUserAccount,
 } from "@/lib/auth-storage";
 
-/**
- * Entry route: send the user to their role home or to login.
- * Renders a minimal placeholder so the shell does not flash empty during replace.
- */
 export default function HomeRedirectPage() {
   const router = useRouter();
 
@@ -25,7 +21,6 @@ export default function HomeRedirectPage() {
       return;
     }
 
-    // Half-broken session (token without user, or user without token)
     if (token || user) {
       clearAuthSession();
     }

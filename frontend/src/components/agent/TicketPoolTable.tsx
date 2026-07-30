@@ -14,7 +14,7 @@ interface TicketPoolTableProps {
   sortDir: SortDir;
   onSort: (key: PoolSortKey) => void;
   onRowClick: (item: PoolTicketItem) => void;
-  /** Highlight important tickets in time column (pool only). */
+
   highlightImportant?: boolean;
 }
 

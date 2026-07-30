@@ -6,8 +6,7 @@ from sqlalchemy import engine_from_config, pool
 from app.core.database import DatabaseModelBase
 from app.core.settings import get_application_settings
 
-# Register all models on metadata so Alembic can autogenerate later
-from app.models import (  # noqa: F401
+from app.models import (
     SupportTicket,
     TicketAttachment,
     TicketComment,
@@ -27,9 +26,8 @@ if alembic_config.config_file_name is not None:
 
 target_metadata = DatabaseModelBase.metadata
 
-
 def run_migrations_offline() -> None:
-    """Run migrations without a live DB connection (SQL script mode)."""
+    """Накатывает миграции без подключения к БД — просто пишет SQL-скрипт."""
     database_url = alembic_config.get_main_option("sqlalchemy.url")
     context.configure(
         url=database_url,
@@ -41,9 +39,8 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
 def run_migrations_online() -> None:
-    """Run migrations against a live database."""
+    """Накатывает миграции прямо в живую базу."""
     connectable = engine_from_config(
         alembic_config.get_section(alembic_config.config_ini_section, {}),
         prefix="sqlalchemy.",
@@ -55,7 +52,6 @@ def run_migrations_online() -> None:
 
         with context.begin_transaction():
             context.run_migrations()
-
 
 if context.is_offline_mode():
     run_migrations_offline()

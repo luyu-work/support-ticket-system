@@ -1,4 +1,4 @@
-/* Client tickets UI (list + form helpers) */
+
 
 .tickets-page-root.client-shell {
   width: 100%;
@@ -106,10 +106,6 @@
   border-color: rgba(21, 21, 21, 0.3);
 }
 
-/*
-  Title fixed; only #my-tickets-list (.client-ticket-list) scrolls.
-  Cards slide under the title edge as the list clips them.
-*/
 .client-main-card {
   width: 100%;
   flex: 1 1 auto;
@@ -183,7 +179,6 @@
   scrollbar-color: rgba(21, 21, 21, 0.2) transparent;
 }
 
-/* Custom scrollbar only on the list (6px + 4px right inset) */
 .client-ticket-list::-webkit-scrollbar {
   width: 10px;
 }
@@ -281,7 +276,6 @@
   overflow: hidden;
 }
 
-/* Status tags */
 .status-tag {
   flex-shrink: 0;
   padding: 5px 8px 3px;
@@ -293,7 +287,6 @@
   white-space: nowrap;
 }
 
-/* Client-facing statuses */
 .status-tag--in_queue {
   color: #ff8d00;
   background: rgba(255, 141, 0, 0.1);
@@ -312,7 +305,6 @@
   border-color: rgba(21, 21, 21, 0.1);
 }
 
-/* Staff-facing (also styled if client somehow sees them) */
 .status-tag--important {
   color: #ed5e5e;
   background: rgba(237, 94, 94, 0.1);
@@ -333,7 +325,7 @@
 
 body.modal-open {
   overflow: hidden;
-  /* hide any residual browser scrollbars behind the modal */
+
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -344,7 +336,6 @@ body.modal-open::-webkit-scrollbar {
   display: none;
 }
 
-/* Modals */
 .ticket-modal {
   position: fixed;
   inset: 0;
@@ -353,7 +344,7 @@ body.modal-open::-webkit-scrollbar {
   align-items: center;
   justify-content: center;
   padding: 16px;
-  overflow: hidden; /* no page/modal chrome scroll */
+  overflow: hidden;
 }
 
 .ticket-modal[hidden] {
@@ -373,14 +364,13 @@ body.modal-open::-webkit-scrollbar {
   background: #fff;
   border-radius: 16px;
   border: 1px solid var(--border-10);
-  overflow: hidden; /* corners + no second scrollbar on dialog */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   height: fit-content;
   max-height: min(90vh, 720px);
 }
 
-/* kill any native scrollbars on modal chrome (only form scrolls) */
 .ticket-modal,
 .ticket-modal-dialog,
 .ticket-modal-dialog--wide,
@@ -426,8 +416,6 @@ body.modal-open::-webkit-scrollbar {
   line-height: 1.5;
   color: var(--text);
 }
-
-/* ----- Ticket detail modal (same shell as create: 600px, scroll body) ----- */
 
 .ticket-detail-header-main {
   flex: 1 1 auto;
@@ -493,7 +481,6 @@ body.modal-open::-webkit-scrollbar {
   align-self: stretch;
 }
 
-/* display:flex overrides native [hidden] — force hide when no photos */
 .ticket-detail-field[hidden],
 #ticket-detail-photos-field[hidden] {
   display: none !important;
@@ -542,7 +529,6 @@ body.modal-open::-webkit-scrollbar {
   outline-offset: 1px;
 }
 
-/* Fullscreen photo lightbox */
 .photo-lightbox {
   position: fixed;
   inset: 0;
@@ -593,10 +579,6 @@ body.modal-open::-webkit-scrollbar {
   border-color: rgba(241, 245, 255, 0.4);
 }
 
-/*
-  Only .create-ticket-form scrolls. Custom scrollbar styles always attached
-  so the browser never flashes the default bar when is-scrollable toggles.
-*/
 .create-ticket-form {
   flex: 0 1 auto;
   min-height: 0;
@@ -607,18 +589,17 @@ body.modal-open::-webkit-scrollbar {
   overflow-x: hidden;
   overflow-y: hidden;
   overscroll-behavior: contain;
-  /* Firefox custom-ish bar when scroll is on */
+
   scrollbar-width: thin;
   scrollbar-color: rgba(21, 21, 21, 0.2) transparent;
 }
 
 .create-ticket-form.is-scrollable {
-  overflow-y: scroll; /* scroll (not auto) — always our styled bar when needed */
+  overflow-y: scroll;
 }
 
-/* WebKit/Blink — always define our bar (no default replacement flash) */
 .create-ticket-form::-webkit-scrollbar {
-  width: 10px; /* 6px thumb + 4px right gap */
+  width: 10px;
 }
 
 .create-ticket-form::-webkit-scrollbar-button {
@@ -664,7 +645,6 @@ body.modal-open::-webkit-scrollbar {
   gap: 4px;
 }
 
-/* Description + custom HTML resize grip (two diagonal stripes) */
 .field--description .description-field {
   position: relative;
   display: block;
@@ -699,7 +679,7 @@ body.modal-open::-webkit-scrollbar {
   font-size: 16px;
   font-weight: 400;
   line-height: 1.5;
-  resize: none; /* native grip off — use .textarea-resize-handle */
+  resize: none;
 }
 
 .field--description .description-field textarea::placeholder {
@@ -736,7 +716,6 @@ body.modal-open::-webkit-scrollbar {
   stroke: #151515;
 }
 
-/* Custom select (styled dropdown) */
 .custom-select {
   position: relative;
   width: 100%;
@@ -791,7 +770,7 @@ body.modal-open::-webkit-scrollbar {
   flex-direction: column;
   gap: 2px;
   box-sizing: border-box;
-  /* sit above form scroll content */
+
   box-shadow: 0 8px 24px rgba(21, 21, 21, 0.08);
 }
 
@@ -827,7 +806,6 @@ body.modal-open::-webkit-scrollbar {
   background: rgba(21, 21, 21, 0.05);
 }
 
-/* Always 5 equal columns — no horizontal scroll */
 .photo-preview-list {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -856,7 +834,6 @@ body.modal-open::-webkit-scrollbar {
   padding: 0;
 }
 
-/* display:flex above would override [hidden] — force hide at 5 photos */
 .photo-add-tile[hidden] {
   display: none !important;
 }
@@ -941,7 +918,6 @@ body.modal-open::-webkit-scrollbar {
   gap: 4px;
 }
 
-/* Support reply card (client + staff) */
 .ticket-support-comment {
   align-self: stretch;
   display: flex;
@@ -992,7 +968,7 @@ body.modal-open::-webkit-scrollbar {
   box-sizing: border-box;
   height: 32px;
   min-height: 32px;
-  /* horizontal padding only; optical shift via padding-top (text sat slightly high) */
+
   padding: 1px 12px 0;
   border: 1px solid var(--border-10);
   border-radius: 8px;
@@ -1053,11 +1029,11 @@ body.modal-open::-webkit-scrollbar {
 .ticket-activity-item {
   --activity-dot-size: 8px;
   --activity-marker-width: 12px;
-  /* Vertical offset of the dot from the top of the marker (text alignment) */
+
   --activity-dot-offset: 6px;
 
   display: grid;
-  /* marker | time | body — as in the product design */
+
   grid-template-columns: var(--activity-marker-width) 118px minmax(0, 1fr);
   column-gap: 12px;
   align-items: stretch;
@@ -1068,7 +1044,7 @@ body.modal-open::-webkit-scrollbar {
   color: var(--text-60);
   font-size: 12px;
   line-height: 1.4;
-  /* Match label baseline: label is 14px/1.4, time is 12px/1.4 */
+
   padding-top: 2px;
 }
 
@@ -1077,14 +1053,10 @@ body.modal-open::-webkit-scrollbar {
   width: var(--activity-marker-width);
   justify-self: center;
   align-self: stretch;
-  /* Prevent grid/flex from affecting the absolute children box */
+
   overflow: visible;
 }
 
-/*
-  Vertical line behind the dots.
-  Extends ±12px into item padding so segments of adjacent rows join seamlessly.
-*/
 .ticket-activity-marker::before {
   content: "";
   position: absolute;
@@ -1097,25 +1069,21 @@ body.modal-open::-webkit-scrollbar {
   z-index: 0;
 }
 
-/* First of many: no stub above the first dot */
 .ticket-activity-item:first-child:not(:only-child) .ticket-activity-marker::before {
   top: calc(var(--activity-dot-offset) + var(--activity-dot-size) / 2);
   bottom: -12px;
 }
 
-/* Last of many: no stub below the last dot */
 .ticket-activity-item:last-child:not(:only-child) .ticket-activity-marker::before {
   top: -12px;
   bottom: auto;
   height: calc(12px + var(--activity-dot-offset) + var(--activity-dot-size) / 2);
 }
 
-/* Single event: only the dot */
 .ticket-activity-item:only-child .ticket-activity-marker::before {
   content: none;
 }
 
-/* SVG circle — always a true circle (CSS boxes can paint as ovals under stretch) */
 .ticket-activity-dot {
   position: absolute;
   z-index: 1;
@@ -1128,7 +1096,7 @@ body.modal-open::-webkit-scrollbar {
   padding: 0;
   display: block;
   overflow: visible;
-  /* white halo so the line doesn't cut through the dot */
+
   box-shadow: 0 0 0 3px #fff;
   border-radius: 50%;
   flex: none;

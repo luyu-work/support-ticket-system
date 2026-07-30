@@ -1,4 +1,4 @@
-"""Re-export base so models can import from app.models.base."""
+"""Реэкспорт базы, чтобы модели импортировали из app.models.base."""
 
 from app.core.database import DatabaseModelBase
 

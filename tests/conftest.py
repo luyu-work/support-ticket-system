@@ -1,7 +1,7 @@
 """
-Shared pytest fixtures.
+Общие фикстуры pytest.
 
-Tests use an in-memory SQLite DB so they run without Docker/PostgreSQL.
+Тесты крутятся на SQLite в памяти — Docker и PostgreSQL не нужны.
 """
 
 import pytest
@@ -13,19 +13,17 @@ from app.core.database import get_database_session
 from app.main import ticket_system_application
 from app.models import DatabaseModelBase
 
-
 @pytest.fixture(autouse=True)
 def _reset_ticket_service_cooldowns() -> None:
-    """Isolate process-wide cooldowns between tests."""
+    """Между тестами сбрасываем общие кулдауны."""
     from app.services.support_ticket_service import reset_promote_cooldown_for_tests
 
     reset_promote_cooldown_for_tests()
     yield
 
-
 @pytest.fixture()
 def database_session() -> Session:
-    """Fresh empty DB for each test, closed afterwards."""
+    """Свежая пустая БД на каждый тест, потом закрываем."""
     test_engine = create_engine(
         "sqlite+pysqlite:///:memory:",
         connect_args={"check_same_thread": False},
@@ -42,10 +40,9 @@ def database_session() -> Session:
         DatabaseModelBase.metadata.drop_all(bind=test_engine)
         test_engine.dispose()
 
-
 @pytest.fixture()
 def api_test_client(database_session: Session) -> TestClient:
-    """HTTP client with the same in-memory DB as database_session."""
+    """HTTP-клиент на той же in-memory БД, что и database_session."""
 
     def override_get_database_session():
         try:

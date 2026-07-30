@@ -1,4 +1,4 @@
-"""HTTP API for support tickets."""
+"""HTTP API для тикетов поддержки."""
 
 import logging
 import mimetypes
@@ -51,12 +51,10 @@ logger = logging.getLogger(__name__)
 
 tickets_router = APIRouter(prefix="/tickets", tags=["tickets"])
 
-
 @tickets_router.get("/problem-reasons", response_model=list[TicketProblemReasonOption])
 def get_problem_reason_options() -> list[TicketProblemReasonOption]:
-    """Select options for the ticket form (list of reasons)."""
+    """Варианты причины для селекта в форме тикета."""
     return list_problem_reason_options()
-
 
 @tickets_router.post(
     "",
@@ -72,8 +70,8 @@ async def create_support_ticket(
     photos: list[UploadFile] | None = File(None),
 ) -> SupportTicketResponse:
     """
-    Client creates a ticket.
-    multipart/form-data: problem_reason, description, optional title, optional photos.
+    Клиент создаёт тикет.
+    multipart/form-data: причина, описание, по желанию заголовок и фото.
     """
     photo_files = photos or []
     try:
@@ -113,13 +111,12 @@ async def create_support_ticket(
     )
     return to_support_ticket_response(new_ticket, include_activity_log=False)
 
-
 @tickets_router.get("/my", response_model=SupportTicketListResponse)
 def list_my_support_tickets(
     database_session: DatabaseSessionDep,
     client_account: ClientAccountDep,
 ) -> SupportTicketListResponse:
-    """List all tickets created by the current client (no pagination)."""
+    """Все тикеты текущего клиента (без пагинации)."""
     tickets, total_ticket_count = list_tickets_for_client(
         database_session,
         client_account=client_account,
@@ -135,7 +132,6 @@ def list_my_support_tickets(
         ],
         total_ticket_count=total_ticket_count,
     )
-
 
 def _tickets_to_pool_items(tickets: list) -> list[PoolTicketItem]:
     items: list[PoolTicketItem] = []
@@ -166,7 +162,6 @@ def _tickets_to_pool_items(tickets: list) -> list[PoolTicketItem]:
         )
     return items
 
-
 _POOL_STATUS_FILTERS = frozenset(
     {
         "in_queue",
@@ -175,7 +170,6 @@ _POOL_STATUS_FILTERS = frozenset(
         "transferred_to_engineers",
     }
 )
-
 
 @tickets_router.get("/pool", response_model=TicketPoolListResponse)
 def list_ticket_pool(
@@ -188,9 +182,9 @@ def list_ticket_pool(
     ),
 ) -> TicketPoolListResponse:
     """
-    Common ticket pool for agents (and admins).
-    Any free agent can claim an unassigned ticket from this list.
-    Closed tickets live in /tickets/archive.
+    Общий пул тикетов для агентов (и админов).
+    Свободный агент может взять отсюда незанятый тикет.
+    Закрытые лежат в /tickets/archive.
     """
     if status_filter is not None and status_filter not in _POOL_STATUS_FILTERS:
         raise HTTPException(
@@ -201,19 +195,17 @@ def list_ticket_pool(
     items = _tickets_to_pool_items(tickets)
     return TicketPoolListResponse(items=items, total_ticket_count=len(items))
 
-
 @tickets_router.get("/archive", response_model=TicketPoolListResponse)
 def list_ticket_archive(
     database_session: DatabaseSessionDep,
     _staff_account: StaffAccountDep,
 ) -> TicketPoolListResponse:
     """
-    Archive of closed tickets for agents and admins (read-only list).
+    Архив закрытых тикетов для агентов и админов (только чтение).
     """
     tickets = list_archived_tickets(database_session)
     items = _tickets_to_pool_items(tickets)
     return TicketPoolListResponse(items=items, total_ticket_count=len(items))
-
 
 @tickets_router.post(
     "/{support_ticket_id}/claim",
@@ -224,7 +216,7 @@ def claim_support_ticket(
     database_session: DatabaseSessionDep,
     agent_account: AgentAccountDep,
 ) -> SupportTicketResponse:
-    """Agent takes a ticket from the common pool into work."""
+    """Агент берёт тикет из общего пула в работу."""
     try:
         ticket = claim_ticket_from_pool(
             database_session,
@@ -249,7 +241,6 @@ def claim_support_ticket(
     )
     return to_support_ticket_response(ticket)
 
-
 @tickets_router.post(
     "/{support_ticket_id}/close",
     response_model=SupportTicketResponse,
@@ -260,7 +251,7 @@ def close_support_ticket(
     database_session: DatabaseSessionDep,
     agent_account: AgentAccountDep,
 ) -> SupportTicketResponse:
-    """Agent closes a ticket they own and leaves an outcome comment."""
+    """Агент закрывает свой тикет и пишет, чем всё закончилось."""
     try:
         ticket = close_ticket_by_agent(
             database_session,
@@ -280,7 +271,6 @@ def close_support_ticket(
         ) from error
     return to_support_ticket_response(ticket)
 
-
 @tickets_router.post(
     "/{support_ticket_id}/transfer-to-engineers",
     response_model=SupportTicketResponse,
@@ -290,7 +280,7 @@ def transfer_support_ticket_to_engineers(
     database_session: DatabaseSessionDep,
     agent_account: AgentAccountDep,
 ) -> SupportTicketResponse:
-    """Agent transfers a ticket they own to engineers."""
+    """Агент передаёт свой тикет инженерам."""
     try:
         ticket = transfer_ticket_to_engineers_by_agent(
             database_session,
@@ -309,14 +299,12 @@ def transfer_support_ticket_to_engineers(
         ) from error
     return to_support_ticket_response(ticket)
 
-
 def _assert_user_can_view_ticket(current_user_account, ticket) -> None:
     if (
         is_client(current_user_account)
         and ticket.client_author_id != current_user_account.user_account_id
     ):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your ticket")
-
 
 @tickets_router.get("/{support_ticket_id}", response_model=SupportTicketResponse)
 def get_support_ticket_detail(
@@ -325,20 +313,19 @@ def get_support_ticket_detail(
     current_user_account: CurrentUserAccountDep,
 ) -> SupportTicketResponse:
     """
-    Get one ticket.
-    Client — only own tickets. Agent/admin — any ticket (for next steps).
+    Один тикет по id.
+    Клиент — только свои. Агент/админ — любой.
     """
     ticket = get_support_ticket_by_id(database_session, support_ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
 
     _assert_user_can_view_ticket(current_user_account, ticket)
-    # Activity log is staff-only; clients still receive agent comments
+
     return to_support_ticket_response(
         ticket,
         include_activity_log=is_staff(current_user_account),
     )
-
 
 @tickets_router.get(
     "/{support_ticket_id}/attachments/{ticket_attachment_id}/file",
@@ -350,7 +337,7 @@ def download_ticket_attachment_file(
     database_session: DatabaseSessionDep,
     current_user_account: CurrentUserAccountDep,
 ) -> FileResponse:
-    """Serve a ticket photo (auth required)."""
+    """Отдаёт фото тикета (нужна авторизация)."""
     ticket = get_support_ticket_by_id(database_session, support_ticket_id)
     if ticket is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Ticket not found")
@@ -370,7 +357,6 @@ def download_ticket_attachment_file(
         file_path = Path.cwd() / file_path
     file_path = file_path.resolve()
 
-    # Only serve files under the configured uploads root (path traversal guard)
     uploads_root = get_ticket_uploads_root().resolve()
     try:
         file_path.relative_to(uploads_root)

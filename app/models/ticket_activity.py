@@ -1,4 +1,4 @@
-"""Lifecycle audit log for support tickets."""
+"""История событий по тикетам."""
 
 from datetime import datetime
 from typing import TYPE_CHECKING
@@ -13,11 +13,10 @@ if TYPE_CHECKING:
     from app.models.support_ticket import SupportTicket
     from app.models.user_account import UserAccount
 
-
 class TicketActivity(DatabaseModelBase):
     """
-    One event in a ticket's history (created, claimed, closed, …).
-    Table name: ticket_activities
+    Одно событие в истории тикета (создан, взят, закрыт…).
+    Таблица: ticket_activities
     """
 
     __tablename__ = "ticket_activities"

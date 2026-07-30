@@ -12,17 +12,15 @@ from app.services.seed_staff_accounts import seed_default_staff_accounts_on_star
 
 logger = logging.getLogger(__name__)
 
-
 @asynccontextmanager
 async def ticket_system_lifespan(_application: FastAPI):
-    """On startup: create SQLite tables if needed, then seed admin/agent."""
+    """При старте: при необходимости создаём таблицы SQLite и сидим админа/агента."""
     create_database_tables_if_needed()
     seed_default_staff_accounts_on_startup()
     yield
 
-
 def create_ticket_system_application() -> FastAPI:
-    """Build and return the FastAPI application (factory)."""
+    """Собирает и возвращает приложение FastAPI."""
     settings = get_application_settings()
     configure_application_logging(settings)
 
@@ -34,7 +32,6 @@ def create_ticket_system_application() -> FastAPI:
         lifespan=ticket_system_lifespan,
     )
 
-    # Next.js dev server (and local production frontend)
     ticket_system_application.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -55,6 +52,4 @@ def create_ticket_system_application() -> FastAPI:
     )
     return ticket_system_application
 
-
-# ASGI entrypoint for uvicorn: app.main:ticket_system_application
 ticket_system_application = create_ticket_system_application()

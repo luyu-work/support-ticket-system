@@ -1,4 +1,4 @@
-"""SQLAlchemy models for the ticket system."""
+"""Модели SQLAlchemy тикет-системы."""
 
 from app.models.base import DatabaseModelBase
 from app.models.enums import TicketActivityEventType, TicketProblemReason, TicketStatus, UserRole

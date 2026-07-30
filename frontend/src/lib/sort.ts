@@ -1,6 +1,5 @@
 export type SortDir = "asc" | "desc";
 
-/** Toggle sort key/direction (click same column flips dir). */
 export function nextSortState<K extends string>(
   currentKey: K,
   currentDir: SortDir,

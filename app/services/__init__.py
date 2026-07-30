@@ -1,1 +1,1 @@
-"""Business logic (not HTTP)."""
+"""Бизнес-логика (без HTTP)."""

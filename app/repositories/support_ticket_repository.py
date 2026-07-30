@@ -1,4 +1,4 @@
-"""DB access for support tickets, attachments, comments, and activity."""
+"""Работа с БД: тикеты, вложения, комментарии, история."""
 
 from datetime import datetime
 
@@ -13,7 +13,6 @@ from app.models import (
     TicketComment,
     TicketStatus,
 )
-
 
 def get_ticket_by_id(
     database_session: Session,
@@ -30,7 +29,6 @@ def get_ticket_by_id(
         .where(SupportTicket.support_ticket_id == support_ticket_id)
     )
 
-
 def count_tickets_for_client(
     database_session: Session,
     client_author_id: int,
@@ -44,7 +42,6 @@ def count_tickets_for_client(
         or 0
     )
 
-
 def list_tickets_for_client(
     database_session: Session,
     client_author_id: int,
@@ -57,7 +54,6 @@ def list_tickets_for_client(
             .order_by(SupportTicket.created_at.desc())
         ).all()
     )
-
 
 def list_stale_queue_ticket_ids(
     database_session: Session,
@@ -73,7 +69,6 @@ def list_stale_queue_ticket_ids(
         ).all()
     )
 
-
 def mark_tickets_important(
     database_session: Session,
     ticket_ids: list[int],
@@ -85,7 +80,6 @@ def mark_tickets_important(
         .where(SupportTicket.support_ticket_id.in_(ticket_ids))
         .values(status=TicketStatus.IMPORTANT)
     )
-
 
 def list_pool_tickets(
     database_session: Session,
@@ -102,7 +96,6 @@ def list_pool_tickets(
         query = query.where(SupportTicket.status == status_filter)
     return list(database_session.scalars(query).all())
 
-
 def list_archived_tickets(database_session: Session) -> list[SupportTicket]:
     query = (
         select(SupportTicket)
@@ -112,14 +105,12 @@ def list_archived_tickets(database_session: Session) -> list[SupportTicket]:
     )
     return list(database_session.scalars(query).all())
 
-
 def add_ticket(
     database_session: Session,
     ticket: SupportTicket,
 ) -> SupportTicket:
     database_session.add(ticket)
     return ticket
-
 
 def add_attachment(
     database_session: Session,
@@ -128,14 +119,12 @@ def add_attachment(
     database_session.add(attachment)
     return attachment
 
-
 def add_comment(
     database_session: Session,
     comment: TicketComment,
 ) -> TicketComment:
     database_session.add(comment)
     return comment
-
 
 def add_activity(
     database_session: Session,
@@ -153,7 +142,6 @@ def add_activity(
     )
     database_session.add(activity)
     return activity
-
 
 def get_attachment_for_ticket(
     database_session: Session,

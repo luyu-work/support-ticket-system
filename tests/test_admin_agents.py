@@ -1,10 +1,9 @@
-"""Admin agent management (create / update / delete)."""
+"""Админка агентов: создать / обновить / удалить."""
 
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from tests.helpers import admin_token, agent_token, auth_headers
-
 
 def test_admin_lists_and_creates_agent(
     api_test_client: TestClient,
@@ -46,7 +45,6 @@ def test_admin_lists_and_creates_agent(
     )
     assert login.status_code == 200
     assert login.json()["user_account"]["role"] == "agent"
-
 
 def test_admin_updates_and_deletes_agent(
     api_test_client: TestClient,
@@ -100,7 +98,6 @@ def test_admin_updates_and_deletes_agent(
     )
     assert login.status_code in {401, 403}
 
-
 def test_agent_cannot_manage_agents(
     api_test_client: TestClient,
     database_session: Session,
@@ -110,7 +107,6 @@ def test_agent_cannot_manage_agents(
         headers=auth_headers(agent_token(api_test_client, database_session)),
     )
     assert response.status_code == 403
-
 
 def test_duplicate_agent_number_rejected(
     api_test_client: TestClient,

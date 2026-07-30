@@ -5,9 +5,6 @@ import { useRouter } from "next/navigation";
 import { getAccessToken, getPostLoginPath, getStoredUserAccount } from "@/lib/auth-storage";
 import type { UserAccount, UserRole } from "@/types/api";
 
-/**
- * Gate a page by role. Returns user when allowed, null while redirecting.
- */
 export function useRequireRole(allowed: UserRole | UserRole[]): UserAccount | null {
   const router = useRouter();
   const [user, setUser] = useState<UserAccount | null>(null);

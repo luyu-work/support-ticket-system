@@ -1,1 +1,1 @@
-"""Core setup: settings, database, logging."""
+"""Базовая настройка: конфиг, база, логи."""

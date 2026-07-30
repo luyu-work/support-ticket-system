@@ -23,7 +23,6 @@ export function PhotoLightbox({ src, alt = "Просмотр фото", onClose 
   return (
     <div className="photo-lightbox">
       <div className="photo-lightbox-backdrop" onClick={onClose} />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img className="photo-lightbox-image" src={src} alt={alt} />
       <button
         type="button"
