@@ -4,17 +4,26 @@
 
 | | |
 |---|---|
-| **Backend** | FastAPI · SQLAlchemy · Alembic · JWT · pytest |
-| **Frontend** | Next.js (App Router) · React · TypeScript |
+| **Backend** | FastAPI · Pydantic v2 · SQLAlchemy · Alembic · JWT · ruff · pytest |
+| **Frontend** | Next.js 16 (App Router) · React 19 · TypeScript |
 | **БД** | PostgreSQL (Docker) или SQLite локально |
-| **Версия** | `v.1.0.0` |
+| **Версия** | `v.1.1.0` |
+
+---
+
+## Что нового в v.1.1.0
+
+- **Pydantic** явно в зависимостях бэкенда; схемы агентов на `EmailStr` / `BaseModel`
+- **ruff** — линтер и форматтер (`pyproject.toml`), прогоняется по `app/`, `tests/`, `scripts/`
+- **Repository layer** — SQLAlchemy-запросы вынесены из сервисов в `app/repositories/`
+- **UI** — timeline логов тикета, кнопка «Логи», стабильный dev-сервер Next (`--webpack`)
 
 ---
 
 ## Возможности
 
 - **Клиент** — регистрация, создание тикетов (фото до 5 шт.), список «Мои тикеты», просмотр комментария поддержки
-- **Агент** — общий пул, claim / close / transfer, архив, логи активности тикета
+- **Агент** — общий пул, claim / close / transfer, архив, **логи активности** тикета
 - **Админ** — CRUD агентов: ФИО, номер, email, пароль, график и время работы
 - **Правила** — тикет в очереди дольше 8 ч → статус `important`; закрытый → архив
 - **Метрики** — страница `/metrics` и скрипт замеров «до / после» оптимизации
@@ -32,18 +41,35 @@
 
 | Слой | Технологии |
 |------|------------|
-| API | FastAPI, Pydantic, python-jose (JWT), bcrypt |
+| API | FastAPI, **Pydantic v2**, python-jose (JWT), bcrypt |
 | ORM / миграции | SQLAlchemy 2.x, Alembic |
-| UI | Next.js App Router, CSS-токены (`globals.css`) |
-| Тесты | pytest + TestClient |
+| Архитектура | `api` → `services` → `repositories` → `models` |
+| UI | Next.js 16 App Router, React 19, CSS-токены |
+| Тесты / линт | pytest + TestClient, **ruff** |
 | Инфра | Docker Compose (Postgres), Dockerfile |
+
+### Слои backend
+
+| Слой | Папка | Ответственность |
+|------|--------|-----------------|
+| HTTP | `app/api/` | роуты, зависимости, HTTP-ошибки |
+| Бизнес-логика | `app/services/` | правила, валидация, commit-транзакции |
+| Доступ к БД | `app/repositories/` | `select` / `add` / bulk-update |
+| Схемы | `app/schemas/` | Pydantic request/response |
+| Модели | `app/models/` | SQLAlchemy ORM |
 
 ---
 
 ## Структура репозитория
 
 ```
-app/                     # FastAPI: api, models, services, schemas, core
+app/
+  api/                   # HTTP routers
+  services/              # бизнес-логика
+  repositories/          # доступ к БД (SQLAlchemy)
+  schemas/               # Pydantic request/response
+  models/                # SQLAlchemy ORM
+  core/                  # settings, security, database
 frontend/                # Next.js UI
   src/app/               # страницы (login, tickets, agent/*, metrics)
   src/components/        # React-компоненты
@@ -52,21 +78,27 @@ frontend/                # Next.js UI
 alembic/                 # миграции БД
 tests/                   # pytest (~50 тестов)
 scripts/measure_metrics.py
-metrics/                 # JSON-снимки замеров (baseline400 / after400)
+metrics/                 # JSON-снимки замеров
 docker-compose.yml
 start_project.py
+requirements.txt         # fastapi, pydantic, ruff, …
+pyproject.toml           # конфиг ruff
 ```
 
 ---
 
 ## Быстрый старт (Windows PowerShell)
 
-Команды — **по одной строке**.
+Команды — **по одной строке**. Корень проекта:
+
+```text
+C:\Users\lubu\Desktop\Projects\support-ticket-system
+```
 
 ### 1. Backend
 
 ```powershell
-cd C:\Users\lubu\Desktop\PythonProject
+cd C:\Users\lubu\Desktop\Projects\support-ticket-system
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -91,11 +123,13 @@ DATABASE_URL_OVERRIDE=sqlite:///./ticket_system_local.db
 Отдельное окно терминала:
 
 ```powershell
-cd C:\Users\lubu\Desktop\PythonProject\frontend
+cd C:\Users\lubu\Desktop\Projects\support-ticket-system\frontend
 copy .env.example .env.local
 npm install
 npm run dev
 ```
+
+`npm run dev` поднимает Next.js на **webpack** (`next dev --webpack`) — стабильнее, чем Turbopack на Windows.
 
 UI: **http://127.0.0.1:3000**
 
@@ -149,6 +183,8 @@ python start_project.py
 | `/agent/agents` | admin | Управление агентами |
 | `/metrics` | публично | Отчёт «до / после» оптимизации (400 тикетов) |
 
+В модалке тикета (agent/admin) кнопка **«Логи»** открывает timeline истории: создание, claim, important, close, transfer.
+
 ---
 
 ## API (кратко)
@@ -171,8 +207,8 @@ python start_project.py
 | `GET` | `/tickets/my` | client — список **без** комментариев |
 | `GET` | `/tickets/{id}` | detail (+ comments, activity для staff) |
 | `GET` | `/tickets/{id}/attachments/{aid}/file` | файл фото |
-| `GET` | `/tickets/pool` | agent — пул (без closed) |
-| `GET` | `/tickets/archive` | agent — архив |
+| `GET` | `/tickets/pool` | agent/admin — пул (без closed) |
+| `GET` | `/tickets/archive` | agent/admin — архив |
 | `POST` | `/tickets/{id}/claim` | взять в работу |
 | `POST` | `/tickets/{id}/close` | закрыть **с комментарием** |
 | `POST` | `/tickets/{id}/transfer-to-engineers` | передать инженерам |
@@ -197,9 +233,21 @@ python start_project.py
 
 1. Тикет в очереди дольше **8 часов** → статус `important` (bulk UPDATE + cooldown 30 с).
 2. Закрытый тикет уходит в **архив**.
-3. **Логи** активности — только agent/admin.
+3. **Логи** активности — только agent/admin (кнопка «Логи» в модалке).
 4. Комментарий при закрытии видит **клиент**.
 5. Список `/tickets/my` не отдаёт комментарии (они в detail) — меньше payload.
+
+---
+
+## Линт (ruff)
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+python -m ruff check app tests scripts
+python -m ruff format app tests scripts
+```
+
+Конфиг: `pyproject.toml` (target Python 3.12, isort, pyupgrade, bugbear).
 
 ---
 
@@ -249,6 +297,11 @@ pytest
 
 Коммиты: `v.x.x.x` (+ короткий комментарий по смыслу).
 
+| Версия | Суть |
+|--------|------|
+| `v.1.0.0` | MVP: клиент / агент / админ, пул, архив, метрики |
+| `v.1.1.0` | Pydantic + ruff, repositories, UI логов / timeline |
+
 ---
 
 ## Заметки
@@ -256,4 +309,5 @@ pytest
 - `input.md` **не** в git  
 - Секреты только в `.env` / `frontend/.env.local`  
 - `ticket_system_local.db`, `uploads/` — локальные, в git не коммитятся  
-- UI только в `frontend/` (бэкенд — API-only)
+- UI только в `frontend/` (бэкенд — API-only)  
+- На Windows для frontend используйте `npm run dev` (webpack); `npm run dev:turbo` — опционально Turbopack  

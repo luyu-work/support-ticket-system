@@ -9,15 +9,15 @@ from app.models.ticket_comment import TicketComment
 from app.models.user_account import UserAccount
 
 __all__ = [
+    "MAX_ATTACHMENTS_PER_TICKET",
     "DatabaseModelBase",
+    "SupportTicket",
+    "TicketActivity",
+    "TicketActivityEventType",
+    "TicketAttachment",
+    "TicketComment",
+    "TicketProblemReason",
+    "TicketStatus",
     "UserAccount",
     "UserRole",
-    "SupportTicket",
-    "TicketStatus",
-    "TicketProblemReason",
-    "TicketActivityEventType",
-    "TicketComment",
-    "TicketActivity",
-    "TicketAttachment",
-    "MAX_ATTACHMENTS_PER_TICKET",
 ]

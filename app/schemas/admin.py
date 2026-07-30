@@ -1,25 +1,10 @@
 """Admin: agent management schemas."""
 
 from datetime import datetime
-import re
 
-from pydantic import BaseModel, Field, field_validator
-
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 WEEKDAY_LABELS_RU = ("Пн", "Вт", "Ср", "Чт", "Пт", "Сб", "Вс")
-
-
-def normalize_email(value: str) -> str:
-    return value.strip().lower()
-
-
-def validate_email(value: str) -> str:
-    email = normalize_email(value)
-    if not re.fullmatch(r"[^@\s]+@[^@\s]+\.[^@\s]+", email):
-        raise ValueError("Некорректный email")
-    if len(email) > 255:
-        raise ValueError("Email слишком длинный")
-    return email
 
 
 def validate_work_days(value: list[int]) -> list[int]:
@@ -43,7 +28,7 @@ def validate_hh_mm(value: str) -> str:
 class AgentCreateRequest(BaseModel):
     full_name: str = Field(min_length=1, max_length=255)
     agent_number: int = Field(ge=1, le=9999)
-    email: str = Field(min_length=3, max_length=255)
+    email: EmailStr
     password: str = Field(min_length=4, max_length=72)
     work_days: list[int] = Field(min_length=1, max_length=7)
     work_time_start: str = Field(min_length=4, max_length=5)
@@ -51,8 +36,8 @@ class AgentCreateRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def _email(cls, value: str) -> str:
-        return validate_email(value)
+    def _email(cls, value: EmailStr) -> str:
+        return str(value).strip().lower()
 
     @field_validator("work_days")
     @classmethod
@@ -68,7 +53,7 @@ class AgentCreateRequest(BaseModel):
 class AgentUpdateRequest(BaseModel):
     full_name: str | None = Field(default=None, min_length=1, max_length=255)
     agent_number: int | None = Field(default=None, ge=1, le=9999)
-    email: str | None = Field(default=None, min_length=3, max_length=255)
+    email: EmailStr | None = None
     password: str | None = Field(default=None, min_length=4, max_length=72)
     work_days: list[int] | None = Field(default=None, min_length=1, max_length=7)
     work_time_start: str | None = Field(default=None, min_length=4, max_length=5)
@@ -76,8 +61,8 @@ class AgentUpdateRequest(BaseModel):
 
     @field_validator("email")
     @classmethod
-    def _email(cls, value: str | None) -> str | None:
-        return None if value is None else validate_email(value)
+    def _email(cls, value: EmailStr | None) -> str | None:
+        return None if value is None else str(value).strip().lower()
 
     @field_validator("work_days")
     @classmethod

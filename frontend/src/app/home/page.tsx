@@ -2,10 +2,15 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { getAccessToken, getPostLoginPath, getStoredUserAccount } from "@/lib/auth-storage";
+import {
+  clearAuthSession,
+  getAccessToken,
+  getPostLoginPath,
+  getStoredUserAccount,
+} from "@/lib/auth-storage";
 
 /**
- * Legacy route: send authenticated users to their role home, others to login.
+ * Legacy route: same as "/", kept for old bookmarks/links.
  */
 export default function HomePage() {
   const router = useRouter();
@@ -13,12 +18,27 @@ export default function HomePage() {
   useEffect(() => {
     const token = getAccessToken();
     const account = getStoredUserAccount();
-    if (!token || !account) {
-      router.replace("/login");
+    if (token && account) {
+      router.replace(getPostLoginPath(account));
       return;
     }
-    router.replace(getPostLoginPath(account));
+    if (token || account) {
+      clearAuthSession();
+    }
+    router.replace("/login");
   }, [router]);
 
-  return null;
+  return (
+    <main
+      style={{
+        minHeight: "100vh",
+        display: "grid",
+        placeItems: "center",
+        fontFamily: "system-ui, sans-serif",
+        color: "#555",
+      }}
+    >
+      Загрузка…
+    </main>
+  );
 }

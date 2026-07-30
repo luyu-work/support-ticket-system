@@ -10,9 +10,7 @@ def configure_application_logging(settings: ApplicationSettings) -> None:
 
     logging.basicConfig(
         level=log_level,
-        format=(
-            "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-        ),
+        format=("%(asctime)s | %(levelname)s | %(name)s | %(message)s"),
         datefmt="%Y-%m-%d %H:%M:%S",
         handlers=[logging.StreamHandler(sys.stdout)],
         force=True,

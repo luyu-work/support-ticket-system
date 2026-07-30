@@ -5,13 +5,11 @@ import time
 from datetime import UTC, datetime, timedelta
 
 from fastapi import UploadFile
-from sqlalchemy import func, select, update
-from sqlalchemy.orm import Session, selectinload
+from sqlalchemy.orm import Session
 
 from app.core.settings import ApplicationSettings, get_application_settings
 from app.models import (
     SupportTicket,
-    TicketActivity,
     TicketActivityEventType,
     TicketAttachment,
     TicketComment,
@@ -19,6 +17,7 @@ from app.models import (
     TicketStatus,
     UserAccount,
 )
+from app.repositories import support_ticket_repository
 from app.schemas.tickets import PROBLEM_REASON_LABELS_RU
 from app.services.ticket_photo_storage import (
     InvalidTicketPhotoError,
@@ -68,13 +67,12 @@ def _record_ticket_activity(
     log_level: int = logging.INFO,
 ) -> None:
     """Append one lifecycle event (not committed by itself)."""
-    database_session.add(
-        TicketActivity(
-            support_ticket_id=support_ticket_id,
-            event_type=event_type,
-            actor_user_id=actor_user_id,
-            details=details,
-        )
+    support_ticket_repository.add_activity(
+        database_session,
+        support_ticket_id=support_ticket_id,
+        event_type=event_type,
+        actor_user_id=actor_user_id,
+        details=details,
     )
     logger.log(
         log_level,
@@ -128,7 +126,7 @@ def create_support_ticket_for_client(
         client_author_id=client_account.user_account_id,
         assigned_agent_id=None,
     )
-    database_session.add(new_ticket)
+    support_ticket_repository.add_ticket(database_session, new_ticket)
     database_session.flush()  # get support_ticket_id before saving files
 
     for photo_file in photos:
@@ -137,12 +135,13 @@ def create_support_ticket_for_client(
             photo_file=photo_file,
             settings=application_settings,
         )
-        database_session.add(
+        support_ticket_repository.add_attachment(
+            database_session,
             TicketAttachment(
                 support_ticket_id=new_ticket.support_ticket_id,
                 storage_path=storage_path,
                 original_file_name=original_file_name,
-            )
+            ),
         )
 
     _record_ticket_activity(
@@ -154,22 +153,17 @@ def create_support_ticket_for_client(
 
     database_session.commit()
     database_session.refresh(new_ticket)
-    return get_support_ticket_by_id(database_session, new_ticket.support_ticket_id)
+    ticket = get_support_ticket_by_id(database_session, new_ticket.support_ticket_id)
+    if ticket is None:
+        raise RuntimeError("Ticket disappeared after create")
+    return ticket
 
 
 def get_support_ticket_by_id(
     database_session: Session,
     support_ticket_id: int,
 ) -> SupportTicket | None:
-    return database_session.scalar(
-        select(SupportTicket)
-        .options(
-            selectinload(SupportTicket.attachments),
-            selectinload(SupportTicket.comments).selectinload(TicketComment.comment_author),
-            selectinload(SupportTicket.activity_events).selectinload(TicketActivity.actor),
-        )
-        .where(SupportTicket.support_ticket_id == support_ticket_id)
-    )
+    return support_ticket_repository.get_ticket_by_id(database_session, support_ticket_id)
 
 
 def list_tickets_for_client(
@@ -182,19 +176,12 @@ def list_tickets_for_client(
 
     List view only needs ticket + photo count/preview — comments load on detail.
     """
-    base_filter = SupportTicket.client_author_id == client_account.user_account_id
-    total_ticket_count = database_session.scalar(
-        select(func.count()).select_from(SupportTicket).where(base_filter)
-    ) or 0
-
-    tickets = list(
-        database_session.scalars(
-            select(SupportTicket)
-            .options(selectinload(SupportTicket.attachments))
-            .where(base_filter)
-            .order_by(SupportTicket.created_at.desc())
-        ).all()
+    client_id = client_account.user_account_id
+    total_ticket_count = support_ticket_repository.count_tickets_for_client(
+        database_session,
+        client_id,
     )
+    tickets = support_ticket_repository.list_tickets_for_client(database_session, client_id)
     return tickets, total_ticket_count
 
 
@@ -216,23 +203,15 @@ def promote_stale_queue_tickets_to_important(
         return 0
 
     threshold = datetime.now(UTC) - timedelta(hours=IMPORTANT_AFTER_HOURS)
-    stale_ids = list(
-        database_session.scalars(
-            select(SupportTicket.support_ticket_id).where(
-                SupportTicket.status == TicketStatus.IN_QUEUE,
-                SupportTicket.created_at <= threshold,
-            )
-        ).all()
+    stale_ids = support_ticket_repository.list_stale_queue_ticket_ids(
+        database_session,
+        created_before=threshold,
     )
     _last_promote_monotonic = now
     if not stale_ids:
         return 0
 
-    database_session.execute(
-        update(SupportTicket)
-        .where(SupportTicket.support_ticket_id.in_(stale_ids))
-        .values(status=TicketStatus.IMPORTANT)
-    )
+    support_ticket_repository.mark_tickets_important(database_session, stale_ids)
     details = f"Более {IMPORTANT_AFTER_HOURS} ч. в очереди"
     for ticket_id in stale_ids:
         _record_ticket_activity(
@@ -258,17 +237,10 @@ def list_common_ticket_pool(
     Refresh "important" flags before listing.
     """
     promote_stale_queue_tickets_to_important(database_session)
-
-    query = (
-        select(SupportTicket)
-        .options(selectinload(SupportTicket.assigned_agent))
-        .where(SupportTicket.status != TicketStatus.CLOSED)
-        .order_by(SupportTicket.support_ticket_id.asc())
+    return support_ticket_repository.list_pool_tickets(
+        database_session,
+        status_filter=status_filter,
     )
-    if status_filter:
-        query = query.where(SupportTicket.status == status_filter)
-
-    return list(database_session.scalars(query).all())
 
 
 def list_archived_tickets(database_session: Session) -> list[SupportTicket]:
@@ -276,13 +248,7 @@ def list_archived_tickets(database_session: Session) -> list[SupportTicket]:
     Archive for agents and admins: closed tickets only.
     Newest closed tickets first.
     """
-    query = (
-        select(SupportTicket)
-        .options(selectinload(SupportTicket.assigned_agent))
-        .where(SupportTicket.status == TicketStatus.CLOSED)
-        .order_by(SupportTicket.support_ticket_id.desc())
-    )
-    return list(database_session.scalars(query).all())
+    return support_ticket_repository.list_archived_tickets(database_session)
 
 
 def claim_ticket_from_pool(
@@ -327,7 +293,10 @@ def claim_ticket_from_pool(
         )
     database_session.commit()
     database_session.refresh(ticket)
-    return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
+    claimed = get_support_ticket_by_id(database_session, support_ticket_id)
+    if claimed is None:
+        raise TicketNotAvailableForClaimError
+    return claimed
 
 
 def format_agent_badge(
@@ -364,12 +333,13 @@ def close_ticket_by_agent(
         raise TicketActionNotAllowedError
     _assert_agent_owns_ticket(ticket, agent_account)
 
-    database_session.add(
+    support_ticket_repository.add_comment(
+        database_session,
         TicketComment(
             comment_text=cleaned_comment,
             support_ticket_id=ticket.support_ticket_id,
             author_user_id=agent_account.user_account_id,
-        )
+        ),
     )
     ticket.status = TicketStatus.CLOSED
     _record_ticket_activity(
@@ -381,7 +351,10 @@ def close_ticket_by_agent(
     )
     database_session.commit()
     database_session.refresh(ticket)
-    return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
+    closed = get_support_ticket_by_id(database_session, support_ticket_id)
+    if closed is None:
+        raise TicketNotAvailableForClaimError
+    return closed
 
 
 def transfer_ticket_to_engineers_by_agent(
@@ -406,27 +379,30 @@ def transfer_ticket_to_engineers_by_agent(
     )
     database_session.commit()
     database_session.refresh(ticket)
-    return get_support_ticket_by_id(database_session, support_ticket_id)  # type: ignore[return-value]
+    transferred = get_support_ticket_by_id(database_session, support_ticket_id)
+    if transferred is None:
+        raise TicketNotAvailableForClaimError
+    return transferred
 
 
 # Re-export for API error handling
 __all__ = [
-    "UnknownProblemReasonError",
-    "TooManyTicketPhotosError",
-    "InvalidTicketPhotoError",
-    "TicketNotAvailableForClaimError",
-    "TicketAlreadyAssignedError",
-    "TicketActionNotAllowedError",
     "IMPORTANT_AFTER_HOURS",
-    "create_support_ticket_for_client",
-    "get_support_ticket_by_id",
-    "list_tickets_for_client",
-    "list_common_ticket_pool",
-    "list_archived_tickets",
+    "InvalidTicketPhotoError",
+    "TicketActionNotAllowedError",
+    "TicketAlreadyAssignedError",
+    "TicketNotAvailableForClaimError",
+    "TooManyTicketPhotosError",
+    "UnknownProblemReasonError",
+    "build_ticket_title",
     "claim_ticket_from_pool",
     "close_ticket_by_agent",
-    "transfer_ticket_to_engineers_by_agent",
-    "promote_stale_queue_tickets_to_important",
+    "create_support_ticket_for_client",
     "format_agent_badge",
-    "build_ticket_title",
+    "get_support_ticket_by_id",
+    "list_archived_tickets",
+    "list_common_ticket_pool",
+    "list_tickets_for_client",
+    "promote_stale_queue_tickets_to_important",
+    "transfer_ticket_to_engineers_by_agent",
 ]

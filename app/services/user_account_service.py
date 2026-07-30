@@ -1,10 +1,10 @@
 """Create and authenticate user accounts."""
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_plain_password, verify_plain_password
 from app.models import UserAccount, UserRole
+from app.repositories import user_account_repository
 
 
 class EmailAlreadyRegisteredError(Exception):
@@ -24,9 +24,9 @@ def normalize_email(email: str) -> str:
 
 
 def get_user_account_by_email(database_session: Session, email: str) -> UserAccount | None:
-    normalized_email = normalize_email(email)
-    return database_session.scalar(
-        select(UserAccount).where(UserAccount.email == normalized_email)
+    return user_account_repository.get_user_account_by_email(
+        database_session,
+        normalize_email(email),
     )
 
 
@@ -34,7 +34,7 @@ def get_user_account_by_id(
     database_session: Session,
     user_account_id: int,
 ) -> UserAccount | None:
-    return database_session.get(UserAccount, user_account_id)
+    return user_account_repository.get_user_account_by_id(database_session, user_account_id)
 
 
 def register_client_account(
@@ -61,7 +61,7 @@ def register_client_account(
         is_active=True,
         is_online=False,
     )
-    database_session.add(new_client)
+    user_account_repository.add_user_account(database_session, new_client)
     database_session.commit()
     database_session.refresh(new_client)
     return new_client
@@ -152,7 +152,7 @@ def ensure_staff_user_account(
         work_time_start=work_time_start if role == UserRole.AGENT else None,
         work_time_end=work_time_end if role == UserRole.AGENT else None,
     )
-    database_session.add(staff_account)
+    user_account_repository.add_user_account(database_session, staff_account)
     database_session.commit()
     database_session.refresh(staff_account)
     return staff_account

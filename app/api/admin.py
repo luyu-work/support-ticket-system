@@ -29,10 +29,6 @@ logger = logging.getLogger(__name__)
 admin_router = APIRouter(prefix="/admin", tags=["admin"])
 
 
-def _to_agent_response(agent) -> AgentAdminResponse:
-    return AgentAdminResponse(**agent_to_response(agent))
-
-
 @admin_router.get("/agents", response_model=AgentListResponse)
 def list_support_agents(
     database_session: DatabaseSessionDep,
@@ -40,7 +36,7 @@ def list_support_agents(
 ) -> AgentListResponse:
     """Active agents for the admin table."""
     agents = list_agents(database_session, include_inactive=False)
-    items = [_to_agent_response(agent) for agent in agents]
+    items = [agent_to_response(agent) for agent in agents]
     return AgentListResponse(items=items, total_count=len(items))
 
 
@@ -86,7 +82,7 @@ def create_support_agent(
         admin.user_account_id,
         agent.user_account_id,
     )
-    return _to_agent_response(agent)
+    return agent_to_response(agent)
 
 
 @admin_router.get("/agents/{user_account_id}", response_model=AgentAdminResponse)
@@ -98,7 +94,7 @@ def get_support_agent(
     agent = get_agent_by_id(database_session, user_account_id)
     if agent is None or not agent.is_active:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Agent not found")
-    return _to_agent_response(agent)
+    return agent_to_response(agent)
 
 
 @admin_router.patch("/agents/{user_account_id}", response_model=AgentAdminResponse)
@@ -146,7 +142,7 @@ def patch_support_agent(
         admin.user_account_id,
         agent.user_account_id,
     )
-    return _to_agent_response(agent)
+    return agent_to_response(agent)
 
 
 @admin_router.delete(

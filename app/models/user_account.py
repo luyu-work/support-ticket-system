@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import Boolean, DateTime, Enum, Integer, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -37,19 +37,19 @@ class UserAccount(DatabaseModelBase):
     is_online: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     # Agent-only fields (null for client/admin)
-    agent_number: Mapped[Optional[int]] = mapped_column(
+    agent_number: Mapped[int | None] = mapped_column(
         Integer,
         unique=True,
         nullable=True,
         index=True,
     )
     # JSON list of weekday indices: 0=Mon … 6=Sun, e.g. "[0,1,2,3,4]"
-    work_days: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    work_days: Mapped[str | None] = mapped_column(Text, nullable=True)
     # "HH:MM" 24h local
-    work_time_start: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
-    work_time_end: Mapped[Optional[str]] = mapped_column(String(5), nullable=True)
+    work_time_start: Mapped[str | None] = mapped_column(String(5), nullable=True)
+    work_time_end: Mapped[str | None] = mapped_column(String(5), nullable=True)
     # Last password set by admin (for admin UI only; login still uses hashed_password)
-    admin_visible_password: Mapped[Optional[str]] = mapped_column(String(128), nullable=True)
+    admin_visible_password: Mapped[str | None] = mapped_column(String(128), nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
@@ -70,7 +70,4 @@ class UserAccount(DatabaseModelBase):
     )
 
     def __repr__(self) -> str:
-        return (
-            f"<UserAccount id={self.user_account_id} "
-            f"email={self.email!r} role={self.role}>"
-        )
+        return f"<UserAccount id={self.user_account_id} email={self.email!r} role={self.role}>"

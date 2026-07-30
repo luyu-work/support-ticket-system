@@ -5,8 +5,8 @@ import logging
 from fastapi import APIRouter, HTTPException, status
 
 from app.api.deps import CurrentUserAccountDep, DatabaseSessionDep
-from app.core.security import create_access_token
 from app.core.roles import is_agent
+from app.core.security import create_access_token
 from app.schemas.auth import (
     AccessTokenResponse,
     ClientRegistrationRequest,

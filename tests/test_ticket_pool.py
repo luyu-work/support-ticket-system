@@ -10,8 +10,8 @@ from app.services.support_ticket_service import (
     IMPORTANT_AFTER_HOURS,
     promote_stale_queue_tickets_to_important,
 )
-from tests.helpers import agent_token as get_agent_token, register_client
-
+from tests.helpers import agent_token as get_agent_token
+from tests.helpers import register_client
 
 
 def test_agent_sees_common_pool(
@@ -224,8 +224,8 @@ def test_agent_closes_and_transfers_ticket(
 
 
 def test_stale_queue_becomes_important(database_session: Session) -> None:
-    from app.models import UserAccount, UserRole
     from app.core.security import hash_plain_password
+    from app.models import UserAccount, UserRole
 
     client = UserAccount(
         email="stale.client@example.com",

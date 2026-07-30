@@ -17,6 +17,7 @@ Results: metrics/<label>.json
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import re
 import statistics
@@ -27,10 +28,12 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from sqlalchemy import StaticPool, create_engine, func, select
-from sqlalchemy.orm import Session, sessionmaker, selectinload
+from sqlalchemy.orm import Session, selectinload, sessionmaker
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
+
+from fastapi.testclient import TestClient  # noqa: E402
 
 from app.core.database import DatabaseModelBase, get_database_session  # noqa: E402
 from app.core.security import create_access_token, hash_plain_password  # noqa: E402
@@ -44,7 +47,6 @@ from app.models import (  # noqa: E402
 )
 from app.schemas.tickets import to_support_ticket_response  # noqa: E402
 from app.services import support_ticket_service as ticket_svc  # noqa: E402
-from fastapi.testclient import TestClient  # noqa: E402
 
 METRICS_DIR = ROOT / "metrics"
 DEFAULT_SEED_TICKETS = 80
@@ -73,10 +75,8 @@ def count_source_lines() -> dict:
             if "node_modules" in path.parts or "__pycache__" in path.parts:
                 continue
             file_count += 1
-            try:
+            with contextlib.suppress(OSError):
                 line_count += sum(1 for _ in path.open(encoding="utf-8", errors="ignore"))
-            except OSError:
-                pass
         out[name] = {"files": file_count, "lines": line_count}
     out["python_total_lines"] = {
         "files": out["python_app"]["files"] + out["python_tests"]["files"],
@@ -248,9 +248,7 @@ def _run_my_tickets_once(
                 select(SupportTicket)
                 .options(
                     selectinload(SupportTicket.attachments),
-                    selectinload(SupportTicket.comments).selectinload(
-                        TicketComment.comment_author
-                    ),
+                    selectinload(SupportTicket.comments).selectinload(TicketComment.comment_author),
                 )
                 .where(SupportTicket.client_author_id == client_account.user_account_id)
                 .order_by(SupportTicket.created_at.desc())
@@ -324,9 +322,7 @@ def bench_api() -> dict:
                     response = http.request(method, path, headers=headers)
                     samples.append((time.perf_counter() - t0) * 1000)
                     last_status = response.status_code
-                results[name] = _stats(
-                    samples, path=path, method=method, status=last_status
-                )
+                results[name] = _stats(samples, path=path, method=method, status=last_status)
 
             timed_http("health", "GET", "/health")
             timed_http("pool", "GET", "/tickets/pool", agent_token)

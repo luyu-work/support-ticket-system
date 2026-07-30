@@ -989,9 +989,11 @@ body.modal-open::-webkit-scrollbar {
 }
 
 .ticket-logs-button {
+  box-sizing: border-box;
   height: 32px;
   min-height: 32px;
-  padding: 0 12px;
+  /* horizontal padding only; optical shift via padding-top (text sat slightly high) */
+  padding: 1px 12px 0;
   border: 1px solid var(--border-10);
   border-radius: 8px;
   background: transparent;
@@ -1046,34 +1048,91 @@ body.modal-open::-webkit-scrollbar {
   flex-direction: column;
   gap: 0;
   align-self: stretch;
-  border-left: 2px solid rgba(55, 97, 243, 0.25);
 }
 
 .ticket-activity-item {
-  display: grid;
-  grid-template-columns: 118px minmax(0, 1fr);
-  gap: 12px;
-  padding: 10px 0 10px 16px;
-  position: relative;
-}
+  --activity-dot-size: 8px;
+  --activity-marker-width: 12px;
+  /* Vertical offset of the dot from the top of the marker (text alignment) */
+  --activity-dot-offset: 6px;
 
-.ticket-activity-item::before {
-  content: "";
-  position: absolute;
-  left: -5px;
-  top: 16px;
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: #3761f3;
-  box-shadow: 0 0 0 3px #fff;
+  display: grid;
+  /* marker | time | body — as in the product design */
+  grid-template-columns: var(--activity-marker-width) 118px minmax(0, 1fr);
+  column-gap: 12px;
+  align-items: stretch;
+  padding: 12px 0;
 }
 
 .ticket-activity-time {
   color: var(--text-60);
   font-size: 12px;
   line-height: 1.4;
-  padding-top: 1px;
+  /* Match label baseline: label is 14px/1.4, time is 12px/1.4 */
+  padding-top: 2px;
+}
+
+.ticket-activity-marker {
+  position: relative;
+  width: var(--activity-marker-width);
+  justify-self: center;
+  align-self: stretch;
+  /* Prevent grid/flex from affecting the absolute children box */
+  overflow: visible;
+}
+
+/*
+  Vertical line behind the dots.
+  Extends ±12px into item padding so segments of adjacent rows join seamlessly.
+*/
+.ticket-activity-marker::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -12px;
+  bottom: -12px;
+  width: 2px;
+  margin-left: -1px;
+  background: rgba(55, 97, 243, 0.25);
+  z-index: 0;
+}
+
+/* First of many: no stub above the first dot */
+.ticket-activity-item:first-child:not(:only-child) .ticket-activity-marker::before {
+  top: calc(var(--activity-dot-offset) + var(--activity-dot-size) / 2);
+  bottom: -12px;
+}
+
+/* Last of many: no stub below the last dot */
+.ticket-activity-item:last-child:not(:only-child) .ticket-activity-marker::before {
+  top: -12px;
+  bottom: auto;
+  height: calc(12px + var(--activity-dot-offset) + var(--activity-dot-size) / 2);
+}
+
+/* Single event: only the dot */
+.ticket-activity-item:only-child .ticket-activity-marker::before {
+  content: none;
+}
+
+/* SVG circle — always a true circle (CSS boxes can paint as ovals under stretch) */
+.ticket-activity-dot {
+  position: absolute;
+  z-index: 1;
+  top: var(--activity-dot-offset);
+  left: 50%;
+  width: var(--activity-dot-size);
+  height: var(--activity-dot-size);
+  margin: 0;
+  margin-left: calc(var(--activity-dot-size) / -2);
+  padding: 0;
+  display: block;
+  overflow: visible;
+  /* white halo so the line doesn't cut through the dot */
+  box-shadow: 0 0 0 3px #fff;
+  border-radius: 50%;
+  flex: none;
+  pointer-events: none;
 }
 
 .ticket-activity-label {

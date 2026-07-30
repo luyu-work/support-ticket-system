@@ -313,22 +313,43 @@ export function TicketDetailModal({
                   <p className="ticket-logs-empty">Пока нет записей в логе</p>
                 ) : (
                   <ul className="ticket-activity-log">
-                    {activityLog.map((event) => (
-                      <li key={event.ticket_activity_id} className="ticket-activity-item">
-                        <div className="ticket-activity-time">
-                          {formatTicketCreatedAt(event.created_at)}
-                        </div>
-                        <div className="ticket-activity-body">
-                          <div className="ticket-activity-label">{event.event_label_ru}</div>
-                          {event.actor_full_name && (
-                            <div className="ticket-activity-actor">{event.actor_full_name}</div>
-                          )}
-                          {event.event_type !== "closed" && event.details && (
-                            <div className="ticket-activity-details">{event.details}</div>
-                          )}
-                        </div>
-                      </li>
-                    ))}
+                    {activityLog.map((event) => {
+                      // Claim/transfer store agent name in `details` too — don't show twice
+                      const details =
+                        event.details &&
+                        event.event_type !== "closed" &&
+                        event.details.trim() !== (event.actor_full_name || "").trim()
+                          ? event.details
+                          : null;
+
+                      return (
+                        <li key={event.ticket_activity_id} className="ticket-activity-item">
+                          <div className="ticket-activity-marker" aria-hidden>
+                            <svg
+                              className="ticket-activity-dot"
+                              width="8"
+                              height="8"
+                              viewBox="0 0 8 8"
+                              fill="none"
+                            >
+                              <circle cx="4" cy="4" r="4" fill="#3761F3" />
+                            </svg>
+                          </div>
+                          <div className="ticket-activity-time">
+                            {formatTicketCreatedAt(event.created_at)}
+                          </div>
+                          <div className="ticket-activity-body">
+                            <div className="ticket-activity-label">{event.event_label_ru}</div>
+                            {event.actor_full_name && (
+                              <div className="ticket-activity-actor">{event.actor_full_name}</div>
+                            )}
+                            {details && (
+                              <div className="ticket-activity-details">{details}</div>
+                            )}
+                          </div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 )}
               </div>

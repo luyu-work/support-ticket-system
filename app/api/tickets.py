@@ -6,7 +6,6 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile, status
 from fastapi.responses import FileResponse
-from sqlalchemy import select
 
 from app.api.deps import (
     AgentAccountDep,
@@ -16,7 +15,7 @@ from app.api.deps import (
     StaffAccountDep,
 )
 from app.core.roles import is_client, is_staff
-from app.models import TicketAttachment
+from app.repositories import support_ticket_repository
 from app.schemas.tickets import (
     PROBLEM_REASON_LABELS_RU,
     CloseTicketRequest,
@@ -196,10 +195,7 @@ def list_ticket_pool(
     if status_filter is not None and status_filter not in _POOL_STATUS_FILTERS:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=(
-                "Invalid status filter. Allowed: "
-                + ", ".join(sorted(_POOL_STATUS_FILTERS))
-            ),
+            detail=("Invalid status filter. Allowed: " + ", ".join(sorted(_POOL_STATUS_FILTERS))),
         )
     tickets = list_common_ticket_pool(database_session, status_filter=status_filter)
     items = _tickets_to_pool_items(tickets)
@@ -361,11 +357,10 @@ def download_ticket_attachment_file(
 
     _assert_user_can_view_ticket(current_user_account, ticket)
 
-    attachment = database_session.scalar(
-        select(TicketAttachment).where(
-            TicketAttachment.ticket_attachment_id == ticket_attachment_id,
-            TicketAttachment.support_ticket_id == support_ticket_id,
-        )
+    attachment = support_ticket_repository.get_attachment_for_ticket(
+        database_session,
+        support_ticket_id=support_ticket_id,
+        ticket_attachment_id=ticket_attachment_id,
     )
     if attachment is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Attachment not found")

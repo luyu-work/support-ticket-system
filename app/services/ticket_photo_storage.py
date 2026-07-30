@@ -49,7 +49,7 @@ def validate_ticket_photos(
     photo_files: list[UploadFile],
     settings: ApplicationSettings | None = None,
 ) -> None:
-    application_settings = settings or get_application_settings()
+    del settings  # reserved for future size/type limits from settings
     if len(photo_files) > MAX_ATTACHMENTS_PER_TICKET:
         raise TooManyTicketPhotosError(len(photo_files))
 
@@ -97,8 +97,6 @@ def save_ticket_photo_to_disk(
 
     # Store path relative to project for portability
     relative_storage_path = str(
-        Path(application_settings.ticket_uploads_directory)
-        / str(support_ticket_id)
-        / unique_name
+        Path(application_settings.ticket_uploads_directory) / str(support_ticket_id) / unique_name
     ).replace("\\", "/")
     return relative_storage_path, original_file_name

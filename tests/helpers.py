@@ -7,7 +7,9 @@ from app.core.settings import get_application_settings
 from app.services.seed_staff_accounts import seed_default_staff_accounts
 
 
-def register_client(api_test_client: TestClient, email: str, *, password: str = "ClientPass123") -> str:
+def register_client(
+    api_test_client: TestClient, email: str, *, password: str = "ClientPass123"
+) -> str:
     """Register a client and return access_token."""
     response = api_test_client.post(
         "/auth/register",

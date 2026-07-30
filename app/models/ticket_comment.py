@@ -43,7 +43,4 @@ class TicketComment(DatabaseModelBase):
     comment_author: Mapped["UserAccount"] = relationship(back_populates="ticket_comments")
 
     def __repr__(self) -> str:
-        return (
-            f"<TicketComment id={self.ticket_comment_id} "
-            f"ticket={self.support_ticket_id}>"
-        )
+        return f"<TicketComment id={self.ticket_comment_id} ticket={self.support_ticket_id}>"

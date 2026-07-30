@@ -9,6 +9,7 @@ import { fetchMyTickets } from "@/lib/api";
 import {
   clearAuthSession,
   getAccessToken,
+  getPostLoginPath,
   getStoredUserAccount,
 } from "@/lib/auth-storage";
 import { getFirstLetter } from "@/lib/labels";
@@ -45,7 +46,7 @@ export default function TicketsPage() {
       return;
     }
     if (account.role !== "client") {
-      router.replace("/home");
+      router.replace(getPostLoginPath(account));
       return;
     }
     setUser(account);

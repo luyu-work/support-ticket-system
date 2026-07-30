@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -36,7 +36,7 @@ class SupportTicket(DatabaseModelBase):
         index=True,
     )
 
-    due_date: Mapped[Optional[datetime]] = mapped_column(
+    due_date: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True),
         nullable=True,
     )
@@ -58,7 +58,7 @@ class SupportTicket(DatabaseModelBase):
         nullable=False,
         index=True,
     )
-    assigned_agent_id: Mapped[Optional[int]] = mapped_column(
+    assigned_agent_id: Mapped[int | None] = mapped_column(
         ForeignKey("user_accounts.user_account_id"),
         nullable=True,
         index=True,
@@ -68,7 +68,7 @@ class SupportTicket(DatabaseModelBase):
         back_populates="tickets_created",
         foreign_keys=[client_author_id],
     )
-    assigned_agent: Mapped[Optional["UserAccount"]] = relationship(
+    assigned_agent: Mapped["UserAccount | None"] = relationship(
         back_populates="tickets_assigned",
         foreign_keys=[assigned_agent_id],
     )

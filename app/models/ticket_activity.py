@@ -1,7 +1,7 @@
 """Lifecycle audit log for support tickets."""
 
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from sqlalchemy import DateTime, Enum, ForeignKey, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -34,14 +34,14 @@ class TicketActivity(DatabaseModelBase):
         nullable=False,
         index=True,
     )
-    details: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    details: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     support_ticket_id: Mapped[int] = mapped_column(
         ForeignKey("support_tickets.support_ticket_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
     )
-    actor_user_id: Mapped[Optional[int]] = mapped_column(
+    actor_user_id: Mapped[int | None] = mapped_column(
         ForeignKey("user_accounts.user_account_id"),
         nullable=True,
         index=True,
@@ -55,7 +55,7 @@ class TicketActivity(DatabaseModelBase):
     )
 
     support_ticket: Mapped["SupportTicket"] = relationship(back_populates="activity_events")
-    actor: Mapped[Optional["UserAccount"]] = relationship()
+    actor: Mapped["UserAccount | None"] = relationship()
 
     def __repr__(self) -> str:
         return (

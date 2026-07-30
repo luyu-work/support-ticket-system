@@ -1,16 +1,14 @@
 """Admin CRUD for support agents."""
 
-from __future__ import annotations
-
 import json
 import logging
 
-from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_plain_password
 from app.models import UserAccount, UserRole
-from app.schemas.admin import WEEKDAY_LABELS_RU
+from app.repositories import user_account_repository
+from app.schemas.admin import WEEKDAY_LABELS_RU, AgentAdminResponse
 from app.services.support_ticket_service import format_agent_badge
 
 logger = logging.getLogger(__name__)
@@ -78,47 +76,40 @@ def _assert_time_range(start: str, end: str) -> None:
         raise AgentValidationError("Время окончания должно быть позже начала")
 
 
-def agent_to_response(agent: UserAccount) -> dict:
+def agent_to_response(agent: UserAccount) -> AgentAdminResponse:
+    """Map ORM agent to a typed Pydantic response model."""
     days = parse_work_days(agent.work_days)
     number = agent.agent_number
-    return {
-        "user_account_id": agent.user_account_id,
-        "email": agent.email,
-        "full_name": agent.full_name,
-        "agent_number": number,
-        "agent_badge": format_agent_badge(
+    return AgentAdminResponse(
+        user_account_id=agent.user_account_id,
+        email=agent.email,
+        full_name=agent.full_name,
+        agent_number=number,
+        agent_badge=format_agent_badge(
             agent.user_account_id,
             agent_number=number,
         ),
-        "is_active": agent.is_active,
-        "is_online": agent.is_online,
-        "work_days": days,
-        "work_days_label": work_days_label(days),
-        "work_time_start": agent.work_time_start,
-        "work_time_end": agent.work_time_end,
-        "work_time_label": work_time_label(agent.work_time_start, agent.work_time_end),
-        "password": agent.admin_visible_password,
-        "created_at": agent.created_at,
-    }
+        is_active=agent.is_active,
+        is_online=agent.is_online,
+        work_days=days,
+        work_days_label=work_days_label(days),
+        work_time_start=agent.work_time_start,
+        work_time_end=agent.work_time_end,
+        work_time_label=work_time_label(agent.work_time_start, agent.work_time_end),
+        password=agent.admin_visible_password,
+        created_at=agent.created_at,
+    )
 
 
 def list_agents(database_session: Session, *, include_inactive: bool = False) -> list[UserAccount]:
-    query = select(UserAccount).where(UserAccount.role == UserRole.AGENT)
-    if not include_inactive:
-        query = query.where(UserAccount.is_active.is_(True))
-    query = query.order_by(
-        UserAccount.agent_number.is_(None).asc(),
-        UserAccount.agent_number.asc(),
-        UserAccount.user_account_id.asc(),
+    return user_account_repository.list_agents(
+        database_session,
+        include_inactive=include_inactive,
     )
-    return list(database_session.scalars(query).all())
 
 
 def get_agent_by_id(database_session: Session, user_account_id: int) -> UserAccount | None:
-    agent = database_session.get(UserAccount, user_account_id)
-    if agent is None or agent.role != UserRole.AGENT:
-        return None
-    return agent
+    return user_account_repository.get_agent_by_id(database_session, user_account_id)
 
 
 def _ensure_agent_number_free(
@@ -127,8 +118,9 @@ def _ensure_agent_number_free(
     *,
     exclude_user_id: int | None = None,
 ) -> None:
-    existing = database_session.scalar(
-        select(UserAccount).where(UserAccount.agent_number == agent_number)
+    existing = user_account_repository.get_user_account_by_agent_number(
+        database_session,
+        agent_number,
     )
     if existing is None:
         return
@@ -143,9 +135,7 @@ def _ensure_email_free(
     *,
     exclude_user_id: int | None = None,
 ) -> None:
-    existing = database_session.scalar(
-        select(UserAccount).where(UserAccount.email == email)
-    )
+    existing = user_account_repository.get_user_account_by_email(database_session, email)
     if existing is None:
         return
     if exclude_user_id is not None and existing.user_account_id == exclude_user_id:
@@ -182,7 +172,7 @@ def create_agent(
         work_time_start=work_time_start,
         work_time_end=work_time_end,
     )
-    database_session.add(agent)
+    user_account_repository.add_user_account(database_session, agent)
     database_session.commit()
     database_session.refresh(agent)
     logger.info("Agent created | id=%s number=%s", agent.user_account_id, agent_number)

@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import Any
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
@@ -7,7 +8,7 @@ from app.core.settings import get_application_settings
 
 application_settings = get_application_settings()
 
-_engine_kwargs: dict = {"pool_pre_ping": True}
+_engine_kwargs: dict[str, Any] = {"pool_pre_ping": True}
 if application_settings.uses_sqlite_database:
     # SQLite needs this flag when used with FastAPI/threads
     _engine_kwargs = {
@@ -64,9 +65,7 @@ def _sqlite_add_missing_agent_columns() -> None:
     if "work_time_end" not in existing:
         alters.append("ALTER TABLE user_accounts ADD COLUMN work_time_end VARCHAR(5)")
     if "admin_visible_password" not in existing:
-        alters.append(
-            "ALTER TABLE user_accounts ADD COLUMN admin_visible_password VARCHAR(128)"
-        )
+        alters.append("ALTER TABLE user_accounts ADD COLUMN admin_visible_password VARCHAR(128)")
     if not alters:
         return
     with database_engine.begin() as connection:
@@ -74,7 +73,7 @@ def _sqlite_add_missing_agent_columns() -> None:
             connection.execute(text(statement))
 
 
-def get_database_session() -> Generator[Session, None, None]:
+def get_database_session() -> Generator[Session]:
     """
     FastAPI dependency: one DB session per request.
     Session closes automatically after the request finishes.

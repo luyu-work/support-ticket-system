@@ -52,9 +52,7 @@ def test_seed_is_idempotent(database_session: Session) -> None:
     staff_count = len(
         database_session.scalars(
             select(UserAccount).where(
-                UserAccount.email.in_(
-                    [settings.seed_admin_email, settings.seed_agent_email]
-                )
+                UserAccount.email.in_([settings.seed_admin_email, settings.seed_agent_email])
             )
         ).all()
     )

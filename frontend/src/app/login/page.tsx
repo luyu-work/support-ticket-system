@@ -1,11 +1,16 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthField } from "@/components/auth/AuthField";
 import { AuthShell } from "@/components/auth/AuthShell";
 import { ApiError, loginUser } from "@/lib/api";
-import { getPostLoginPath, saveAuthSession } from "@/lib/auth-storage";
+import {
+  getAccessToken,
+  getPostLoginPath,
+  getStoredUserAccount,
+  saveAuthSession,
+} from "@/lib/auth-storage";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -14,6 +19,15 @@ export default function LoginPage() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"error" | "success" | "">("");
   const [loading, setLoading] = useState(false);
+
+  // Already signed in → go to role home (do not bounce through "/")
+  useEffect(() => {
+    const token = getAccessToken();
+    const user = getStoredUserAccount();
+    if (token && user) {
+      router.replace(getPostLoginPath(user));
+    }
+  }, [router]);
 
   async function onSubmit(event: FormEvent) {
     event.preventDefault();
